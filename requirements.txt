@@ -1,0 +1,13 @@
+langchain-openai
+langchain
+langgraph
+pydantic
+python-dotenv
+jupyter_client
+pyzmq
+ipykernel
+
+
+
+#optional
+gradio
