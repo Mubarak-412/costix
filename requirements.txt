@@ -7,7 +7,7 @@ jupyter_client
 pyzmq
 ipykernel
 
-
+-e .
 
 #optional
 gradio
