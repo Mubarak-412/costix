@@ -2,7 +2,7 @@
 from langgraph.graph import StateGraph, START, END
 from costix.schemas import CostixState,CostixPhase,CostixNodes
 
-from costix.agents import get_info_agent
+from costix.agents import get_info_agent,get_solution_agent
 from costix.model import get_model 
     
 def create_agent_node(agent:any):
@@ -19,10 +19,14 @@ def create_agent_node(agent:any):
 
 phaseToNodeMap={
     CostixPhase.INFORMATION_GATHERING:CostixNodes.INFO_AGENT,
+    CostixPhase.SOLUTION_GENERATION:CostixNodes.SOLUTION_AGENT,
 }
 
 
-ALL_AGENT_NODES=[CostixNodes.INFO_AGENT]
+ALL_AGENT_NODES=[
+    CostixNodes.INFO_AGENT,
+    CostixNodes.SOLUTION_AGENT
+    ]
 
 
 class CostixGraph:
@@ -34,7 +38,10 @@ class CostixGraph:
         model=get_model()
         graph=StateGraph(CostixState)
         self.info_agent=get_info_agent(model)
+        self.solution_agent=get_solution_agent(model)
+
         graph.add_node(CostixNodes.INFO_AGENT,create_agent_node(self.info_agent))
+        graph.add_node(CostixNodes.SOLUTION_AGENT,create_agent_node(self.solution_agent))  
         graph.add_conditional_edges(START, lambda state:state['current_phase'],phaseToNodeMap)
         graph.add_edge(ALL_AGENT_NODES,END)
         self.graph=graph.compile(checkpointer=checkpointer)

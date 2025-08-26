@@ -1,5 +1,6 @@
 from enum import StrEnum
 from typing import TypedDict,NotRequired,Annotated,Sequence
+from pydantic import BaseModel,Field
 from langchain.chat_models.base import BaseChatModel
 from langchain.llms.base import BaseLLM
 from langchain_core.messages import BaseMessage
@@ -54,3 +55,19 @@ class CostixAgentState(CostixState):
 
 
 
+class QuestionTypes(StrEnum):
+    '''
+    The type of question to ask the user
+    '''
+    SINGLE_SELECT='single_select'
+    MULTI_SELECT='multi_select'
+    TEXT='text'
+
+class QuestionSchema(BaseModel):
+    '''
+    The Question that should be asked to the user
+    '''
+    title:str=Field(...,description='The title of the question')
+    subtitle:str=Field(...,description='The subtitle of the question')
+    type:QuestionTypes=Field(...,description='The type of the question to ask the user')
+    options:list[str]=Field([],description='The options for the question')
