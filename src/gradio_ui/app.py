@@ -5,6 +5,11 @@ import gradio as gr
 
 from costix.graph import CostixGraph
 from langgraph.checkpoint.memory import MemorySaver
+
+from gradio_ui.gradioComponents import create_question_component
+
+
+
 checkpoint=MemorySaver()
 
 costix_graph=CostixGraph(checkpointer=checkpoint)
@@ -13,8 +18,6 @@ costix_graph=CostixGraph(checkpointer=checkpoint)
 
 
 from langchain_core.messages import HumanMessage
-
-UPLOAD_DIR='files'
 
 
 def format_file_names(files_names):
@@ -67,38 +70,11 @@ with gr.Blocks(fill_height=True) as demo:
                     scale=1,
                     sources=['upload'])
 
-                # @gr.render(inputs=[downloadable_file_names])
-        # def show_downloadable_files(dl_file_names):
-        #     if len(dl_file_names)!=0:
-
-        #         for link in dl_file_names:
-        #             download_button=gr.File(value=link,label=f'Download File : {link}')
-                    
-        #             @download_button.download(inputs=[downloadable_file_names],outputs=[downloadable_file_names])
-        #             def onClick(dl_file_names):
-        #                 return [x for x in dl_file_names if x!=link]
-        #     else:
-        #         pass
 
         with gr.Column(scale=3) as collectedDataCollumn:
 
             gr.DataFrame(value=lambda x:x,inputs=[collected_data],headers=['title','value','group'],label='Collected Data')
-    # with gr.Tab(label='code',scale='100') as codeTab:
 
-
-        # @gr.render(inputs=[code_snipets])
-        # def show_code_snippets(snippets):
-
-        #     if len(snippets) ==0:
-        #         gr.Markdown('## No Code Snippets generated ')
-        #     else:
-
-        #         for snippet in snippets:
-
-        #             if(snippet['type']=='code'):
-        #                 c=gr.Code(value=snippet['content'],language='python',label='code')
-        #             else:
-        #                 output=gr.Code(value=snippet['content'],label='Output')
     
         @chat_input.submit(
                 inputs={
@@ -116,16 +92,16 @@ with gr.Blocks(fill_height=True) as demo:
                     })
         async def handle_input(inputs):
 
-            for file_path in inputs[chat_input]['files']:
-                filename = os.path.basename(file_path)
-                dest_path = os.path.join(UPLOAD_DIR, filename)
+            # for file_path in inputs[chat_input]['files']:
+            #     filename = os.path.basename(file_path)
+            #     dest_path = os.path.join(UPLOAD_DIR, filename)
                 
-                if not os.path.exists(dest_path):
-                    os.rename(file_path, dest_path)
+                # if not os.path.exists(dest_path):
+                #     os.rename(file_path, dest_path)
 
-                if dest_path not in inputs[uploaded_file_names]:
-                    inputs[uploaded_file_names].append(dest_path)
-                    yield  {uploaded_file_names:inputs[uploaded_file_names]}
+                # if dest_path not in inputs[uploaded_file_names]:
+                #     inputs[uploaded_file_names].append(dest_path)
+                #     yield  {uploaded_file_names:inputs[uploaded_file_names]}
             
             text_input=inputs[chat_input]['text']
 
@@ -134,7 +110,7 @@ with gr.Blocks(fill_height=True) as demo:
                 
                 inputs[chat_history].append(user_message)
             
-                yield {chat_history:inputs[chat_history],chat_input:None}
+                yield {chat_history:inputs[chat_history],chat_input:None}                # return 
 
 
             config={'configurable':{'thread_id':inputs[thread_id]}}
@@ -144,11 +120,24 @@ with gr.Blocks(fill_height=True) as demo:
 
 
             response=costix_graph.invoke(state,config)
+            print(response)
+            questions=response['messages_history']
+            print('questions',questions)
+            last_question=questions[-1].content if len(questions) else None
+
+            
 
 
             yield {
                 collected_data:response['collected_data'],
-                chat_history:inputs[chat_history],
+                chat_history:inputs[chat_history]+[
+                    gr.ChatMessage(
+                        role='assistant',
+                        content= (
+                            create_question_component(last_question) if last_question else 'No Response'
+                        )
+                    )
+                ]
             }
 
 

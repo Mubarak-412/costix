@@ -1,8 +1,13 @@
 from typing import Annotated
 
+from pydantic import BaseModel,Field
 from langchain_core.tools import StructuredTool
 from langgraph.prebuilt import InjectedState
-from pydantic import BaseModel,Field
+from langchain_core.tools import InjectedToolCallId
+from langchain_core.messages import ToolMessage
+from langgraph.types import Command
+
+
 
 class DataPoint(BaseModel):
     """
@@ -12,26 +17,31 @@ class DataPoint(BaseModel):
     value:str=Field(...,description="The value of the data point.")
     group:str=Field(...,description="The group of the data point.")
 
-def add_to_collected_data(data: DataPoint, graph_state: Annotated[dict, InjectedState]):
+def add_to_collected_data(data: DataPoint, tool_call_id: Annotated[str, InjectedToolCallId], graph_state: Annotated[dict, InjectedState]):
     """
     Add data points to the collected data.
     """
+    collected_data=graph_state['collected_data']
+    response_tool_message=''
+    if not collected_data:
+        collected_data=[]
 
-    if "collected_data" not in graph_state:
-        graph_state["collected_data"] = []
-
-    for datapoint in graph_state['collected_data']:
+    for datapoint in collected_data:
         if datapoint['title']==data.title:
-            datapoints_copy=graph_state['collected_data'].copy()
-            datapoints_copy.remove(datapoint)
-            datapoints_copy+=[data.model_dump()]
-            graph_state['collected_data']=datapoints_copy
-            return f"Updated data point with title {data.title}"
+            datapoint['value']=data.value
+            datapoint['group']=data.group
+            response_tool_message=f"Updated data point with title {data.title}"
+            break
+    else:
+        collected_data.append(data.model_dump_json())
+        response_tool_message=f"Added data point with title {data.title}"
+   
+    tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
+    updates={'collected_data':collected_data,'messages':[tool_message]}
     
-    graph_state['collected_data']+=[data.model_dump()]
+    return Command(update=updates)
       
-    print(f'Added data point to collected data: {data}')
-    return f"Added data point with title {data.title}"
+
 
 
 add_to_collected_data_tool = StructuredTool.from_function(
@@ -49,25 +59,27 @@ def remove_from_collected_data(title: str, graph_state: Annotated[dict, Injected
     Args:
         title (str): The title of the data point to remove.
     """
+
+    collected_data=graph_state['collected_data']
     
-    if "collected_data" not in graph_state:
+    if not collected_data:
         return "No collected data to remove."
-    
+    response_tool_message=''
     data_point_deleted=False
 
-    for data_point in graph_state['collected_data']:
+    for data_point in collected_data:
         if data_point['title']==title:
-                                                                                            
-            graph_state['collected_data']=[                      # graph state need to be reassigned inorder to push changes
-                dp for dp in graph_state['collected_data'] if dp['title']!=title
-                ] 
+
+            collected_data.remove(data_point)
             data_point_deleted=True
             break
     if not data_point_deleted:
-        print(f'No data point with title {title} found in collected data.')
-        return f"No data point with title {title} found in collected data."
-    print(f'Removed data point with title {title} from collected data.')
-    return "Removed data point successfully"
+        response_tool_message=f'No data point with title {title} found in collected data.'
+    else:
+        response_tool_message=f'Removed data point with title {title} from collected data.'
+    print(response_tool_message)
+    tool_message=ToolMessage(content=response_tool_message)
+    return Command(update={'collected_data':collected_data,'messages':[tool_message]})
 
 
 remove_from_collected_data_tool = StructuredTool.from_function(

@@ -1,8 +1,12 @@
 pyproject.toml
 src/costix/__init__.py
-src/costix/costixTpes.py
 src/costix/graph.py
+src/costix/model.py
+src/costix/schemas.py
 src/costix.egg-info/PKG-INFO
 src/costix.egg-info/SOURCES.txt
 src/costix.egg-info/dependency_links.txt
 src/costix.egg-info/top_level.txt
+src/gradio_ui/gradioComponents.py
+src/gradio_ui/gradioTest.py
+src/gradio_ui/gradio_ui.py

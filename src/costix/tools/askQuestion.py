@@ -3,14 +3,33 @@ from typing import Annotated
 from enum import StrEnum
 from langchain_core.messages import AIMessage
 from pydantic import BaseModel,Field
-from langgraph.prebuilt import InjectedState
-from langchain_core.tools import StructuredTool
 from costix.schemas import QuestionSchema
+from langchain_core.tools import StructuredTool
+from langgraph.prebuilt import InjectedState
+from langchain_core.tools import InjectedToolCallId
+from langchain_core.messages import ToolMessage
+from langgraph.types import Command
 
-def ask_question(question:QuestionSchema, graph_state: Annotated[dict, InjectedState]):
-    graph_state['messages_history']+=[AIMessage(content=json.dumps(question.model_dump()))]
-    print(question)
-    return 'question displayed successfully'
+
+
+
+def ask_question(
+        question:QuestionSchema,
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        graph_state: Annotated[dict, InjectedState]
+    ):
+    '''
+    used to present a question to the user, multi select questions are prefered for better user experience
+    '''
+
+    question_json=question.model_dump() 
+    message_history=graph_state['messages_history']
+    if not message_history:
+        message_history=[]
+    message_history.append(question_json)
+
+    tool_message=ToolMessage('Question displayed Sucessfully',tool_call_id=tool_call_id)
+    return Command(update={'messages':[tool_message],'messages_history':message_history})
 
 
 ask_question_tool=StructuredTool.from_function(

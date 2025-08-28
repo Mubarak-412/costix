@@ -1,7 +1,10 @@
 from typing import Annotated
 from pydantic import BaseModel,Field
-from langgraph.prebuilt import InjectedState
 from langchain.tools import StructuredTool
+from langgraph.prebuilt import InjectedState
+from langchain_core.tools import InjectedToolCallId
+from langchain_core.messages import ToolMessage
+from langgraph.types import Command
 
 
 
@@ -13,16 +16,24 @@ class SolutionDataPoint(BaseModel):
     key:str=Field(...,description='The key of the data point')
     value:str=Field(...,description='The value of the data point')
 
-def add_to_solution(data_point:SolutionDataPoint, graph_state: Annotated[dict, InjectedState]):
-    for item in graph_state['solution']:
+def add_to_solution(
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        data_point:SolutionDataPoint,
+        solution: Annotated[list, InjectedState('solution')]
+    ):
+    solution_updated=False
+    response_tool_message=''
+    for item in solution:
         if item['group']==data_point.group and item['key']==data_point.key:
-            solution_copy=graph_state['solution'].copy()
-            solution_copy.remove(item)
-            solution_copy+=[data_point.model_dump()]
-            graph_state['solution']=solution_copy
-            return 'data point updated in solution successfully'
-    graph_state['solution']+=[data_point.model_dump()]
-    return 'data point added to solution successfully'
+            item['value']=data_point.value
+            solution_updated=True
+            response_tool_message=f"Updated existing data point with group {data_point.group} and key {data_point.key}"
+            break
+    if not solution_updated:
+        solution+=[data_point.model_dump()]
+        response_tool_message=f"Added data point with group {data_point.group} and key {data_point.key}"
+    tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
+    return Command(update={'solution':solution,'messages':[tool_message]})
 
 add_to_solution_tool=StructuredTool.from_function(
     func=add_to_solution,
@@ -33,13 +44,26 @@ add_to_solution_tool=StructuredTool.from_function(
 )
 
 
-def remove_from_solution(group:str,key:str, graph_state: Annotated[dict, InjectedState]):
-    before_removal_count=len(graph_state['solution'])
-    graph_state['solution']=[item for item in graph_state['solution'] if item['group']!=group or item['key']!=key]
-    after_removal_count=len(graph_state['solution'])
-    if before_removal_count==after_removal_count:
-        return 'data point not found in solution'
-    return 'data point removed from solution successfully'
+def remove_from_solution(
+        group:str,
+        key:str,
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        solution: Annotated[list, InjectedState('solution')]
+    ):
+
+    datapoint_deleted=False
+    for datapoint in solution:
+        if datapoint['group']==group and datapoint['key']==key:
+            solution.remove(datapoint)
+            datapoint_deleted=True
+            break
+
+    if not datapoint_deleted:
+        return f"Data point with group {group} and key {key} not found in solution"
+    else:
+        tool_response_message=f"Removed data point with group {group} and key {key}"
+        tool_message=ToolMessage(content=tool_response_message,tool_call_id=tool_call_id)
+        return Command(update={'solution':solution,'messages':[tool_message]})
 
 
 remove_from_solution_tool=StructuredTool.from_function(

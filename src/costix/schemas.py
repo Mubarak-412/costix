@@ -30,6 +30,10 @@ class CostixNodes(StrEnum):
     TECHNICAL_AGENT='technical_agent'
     ESTIMATION_AGENT='estimation_agent'
 
+CostixPhaseToNodeMap={
+    CostixPhase.INFORMATION_GATHERING:CostixNodes.INFO_AGENT,
+    CostixPhase.SOLUTION_GENERATION:CostixNodes.SOLUTION_AGENT,
+}
 
 
 
@@ -39,7 +43,7 @@ class CostixState(TypedDict):
     '''
     user_input: str=''                                          # >stores the user input
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
-    messages_history: Annotated[Sequence[BaseMessage], add_messages]                   # >stores the message history for the chat(ui)
+    messages_history:list[any]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING
     collected_data:list[dict]=[]
     uploaded_files:list[str]=[]                                 # stores the list of files(names) uploaded by the user

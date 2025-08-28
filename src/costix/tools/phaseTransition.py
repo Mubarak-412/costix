@@ -1,17 +1,32 @@
 
 from typing import Annotated
-from langgraph.prebuilt import InjectedState
 from langchain.tools import StructuredTool
+from langchain_core.messages import ToolMessage
+from langchain_core.tools import InjectedToolCallId
+from langgraph.prebuilt import InjectedState
+from langgraph.types import Command
 
-from costix.schemas import CostixPhase
-
-def update_current_phase(phase: CostixPhase, graph_state: Annotated[dict, InjectedState]):
+from costix.schemas import CostixPhase,CostixPhaseToNodeMap
+def update_current_phase(
+    phase: CostixPhase,
+    tool_call_id: Annotated[str, InjectedToolCallId], 
+    graph_state: Annotated[dict, InjectedState]):
     """
     Update the current phase of the COSTIX estimation process.
     """
 
-    graph_state["current_phase"] = phase
-    return f"Updated current phase to {phase}"
+    current_phase=graph_state['current_phase']
+    if current_phase==phase:
+        return f"Phase {phase} is already the current phase."
+
+    next_node=CostixPhaseToNodeMap[phase]
+    
+    if not next_node:
+        return f"Phase {phase} is not a valid phase."
+    
+    tool_message=ToolMessage(content=f"Updated current phase to {phase}",tool_call_id=tool_call_id)
+    return Command(update={'current_phase':phase,'messages':[tool_message]},goto=next_node)
+
 
 
 
