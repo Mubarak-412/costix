@@ -23,14 +23,10 @@ def ask_question(
     used to present a question to the user, multi select questions are prefered for better user experience
     '''
 
-    question_json=question.model_dump_json() 
-    message_history=graph_state['messages_history']
-    if not message_history:
-        message_history=[]
-    message_history.append(AIMessage(content=question_json))
-
+    question_json=question.model_dump_json()
+    question_message=AIMessage(question_json)
     tool_message=ToolMessage('Question displayed Sucessfully',tool_call_id=tool_call_id)
-    return Command(update={'messages':[tool_message],'messages_history':message_history},goto=END)
+    return Command(update={'messages':[tool_message],'messages_history':[question_message]},goto=END)
 
 
 ask_question_tool=StructuredTool.from_function(

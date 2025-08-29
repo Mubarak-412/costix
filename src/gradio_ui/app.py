@@ -2,7 +2,8 @@ import os
 import os.path
 import uuid
 import gradio as gr
-
+import json
+import pandas as pd
 from costix.graph import CostixGraph
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -17,7 +18,7 @@ costix_graph=CostixGraph(checkpointer=checkpoint)
 
 
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 
 def format_file_names(files_names):
@@ -36,6 +37,16 @@ def create_new_thread():
     costix_graph.initialize_thread(thread_id)
     return thread_id
 
+
+chat_input=gr.MultimodalTextbox(
+                    file_count='multiple',
+                    interactive=True,
+                    placeholder='Enter message or upload file',
+                    show_label=False,
+                    scale=1,
+                    sources=['upload'])
+
+
 with gr.Blocks(fill_height=True) as demo:
 
     uploaded_file_names=gr.State([])
@@ -44,7 +55,7 @@ with gr.Blocks(fill_height=True) as demo:
     # downloadable_file_names=gr.State([])
 
 
-    thread_id=gr.State(create_new_thread())
+    thread_id=gr.State(value=(create_new_thread()))
 
     # code_snipets=gr.State([])
     
@@ -59,22 +70,85 @@ with gr.Blocks(fill_height=True) as demo:
     with gr.Row():
         with gr.Column(scale=7):
             with gr.Tab(label='Chat'):
+                
 
-                chat_history=gr.Chatbot(type='messages',scale=5)
+                chat_history=gr.State([])
 
-                chat_input=gr.MultimodalTextbox(
-                    file_count='multiple',
-                    interactive=True,
-                    placeholder='Enter message or upload file',
-                    show_label=False,
-                    scale=1,
-                    sources=['upload'])
+                @gr.render(inputs={chat_history})
+                def render_chat_history(inputs):
+
+                    with gr.Blocks(fill_height=True) as messages_window:
+
+                        for message in inputs[chat_history]:
+                            # gr.Markdown(message.content)
+                    
+                            content=None
+                            try:
+                                content=json.loads(message.content)
+                            except Exception as ex:
+                                pass
+                                # gr.Text(value=ex,label='Json parse error')
+                            
+                            if isinstance(message, HumanMessage):
+                                with gr.Blocks() as user_block:
+                                    gr.Text(value=message.content,label='user')
+                            elif isinstance(message,AIMessage):
+                                with gr.Blocks() as assistant_block:
+                                    if(content):
+                                        # gr.Text('assistant message')
+                                        q_type=content.get('type','text')
+                                        title=content.get('title','No title')
+                                        subtitle=content.get('subtitle','No subtitle')
+                                        options=content.get('options',[])
+                                        with gr.Group() as question_block:
+                                            gr.Text(value=title,label='AI Response',text_align='right')
+                                            # gr.Markdown(f'# {title}')
+                                            gr.Text(value=subtitle,show_label=False,text_align='right',container=False)
+                                            
+
+                                            
+                                            
+                                            def submit_options(options):
+                                                options_str=''
+                                                if isinstance(options,list):
+                                                    options_str=','.join(options)
+                                                else:
+                                                    options_str=options
+                                                return {chat_input:{'text':options_str}}
+
+                                                
+                                            
+                                            if q_type=='single_select':
+                                                single_select=gr.Radio(options,label='Select One',rtl=True)  
+                                                single_select.change(
+                                                    fn=submit_options,
+                                                    inputs=[single_select],
+                                                    outputs={chat_input}
+                                                )
+
+                                            elif q_type=='multi_select':
+                                                checkbox_group=gr.CheckboxGroup(options,label='options')    
+                                                checkbox_group.change(
+                                                    fn=submit_options,
+                                                    inputs=[checkbox_group],
+                                                    outputs={chat_input}
+                                                )
+                                            
+                                           
+                                    else:
+                                        gr.Text(value=message.content,label='Json parse error')
+                            else:
+                                pass
+
+                chat_input.render()
+               
 
 
         with gr.Column(scale=3) as collectedDataCollumn:
 
-            gr.DataFrame(value=lambda x:x,inputs=[collected_data],headers=['title','value','group'],label='Collected Data')
-
+            with gr.Tab('Collected Data') as collected_data_tab:
+                gr.DataFrame(value=lambda x:pd.DataFrame(x),headers=['title','value','group'],inputs=[collected_data],label='Collected Data')
+                # gr.Text(value=lambda x:json.dumps(x),inputs=[collected_data],label='Collected Data Json')
     
         @chat_input.submit(
                 inputs={
@@ -90,7 +164,7 @@ with gr.Blocks(fill_height=True) as demo:
                     uploaded_file_names,
                     collected_data
                     })
-        async def handle_input(inputs):
+        def handle_input(inputs):
 
             # for file_path in inputs[chat_input]['files']:
             #     filename = os.path.basename(file_path)
@@ -116,28 +190,21 @@ with gr.Blocks(fill_height=True) as demo:
             config={'configurable':{'thread_id':inputs[thread_id]}}
             messages=[HumanMessage(text_input)]
             
-            state={'messages':messages,'uploaded_files':format_file_names(inputs[uploaded_file_names])}
+            state={
+                'messages':messages,
+                'messages_history':messages,
+                'uploaded_files':format_file_names(inputs[uploaded_file_names])}
 
 
             response=costix_graph.invoke(state,config)
             print(response)
-            questions=response['messages_history']
-            print('questions',questions)
-            last_question=questions[-1].content if len(questions) else None
 
             
 
 
             yield {
                 collected_data:response['collected_data'],
-                chat_history:inputs[chat_history]+[
-                    gr.ChatMessage(
-                        role='assistant',
-                        content= (
-                            create_question_component(last_question) if last_question else 'No Response'
-                        )
-                    )
-                ]
+                chat_history:inputs[chat_history]+response['messages_history']
             }
 
 

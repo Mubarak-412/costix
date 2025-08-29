@@ -58,7 +58,7 @@ class CostixState(TypedDict):
     '''
     user_input: str=''                                          # >stores the user input
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
-    messages_history:list[Sequence[BaseMessage],add_messages]=[]                   # >stores the message history for the chat(ui)
+    messages_history: Annotated[Sequence[BaseMessage], add_messages]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING
     collected_data:Annotated[list[dict],collected_data_reducer]=[]
     uploaded_files:list[str]=[]                                 # stores the list of files(names) uploaded by the user
