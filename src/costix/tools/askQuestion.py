@@ -2,6 +2,7 @@ import json
 from typing import Annotated
 from enum import StrEnum
 from langchain_core.messages import AIMessage
+from langgraph.graph import END
 from pydantic import BaseModel,Field
 from costix.schemas import QuestionSchema
 from langchain_core.tools import StructuredTool
@@ -22,14 +23,14 @@ def ask_question(
     used to present a question to the user, multi select questions are prefered for better user experience
     '''
 
-    question_json=question.model_dump() 
+    question_json=question.model_dump_json() 
     message_history=graph_state['messages_history']
     if not message_history:
         message_history=[]
-    message_history.append(question_json)
+    message_history.append(AIMessage(content=question_json))
 
     tool_message=ToolMessage('Question displayed Sucessfully',tool_call_id=tool_call_id)
-    return Command(update={'messages':[tool_message],'messages_history':message_history})
+    return Command(update={'messages':[tool_message],'messages_history':message_history},goto=END)
 
 
 ask_question_tool=StructuredTool.from_function(

@@ -23,6 +23,7 @@ def add_to_collected_data(data: DataPoint, tool_call_id: Annotated[str, Injected
     """
     collected_data=graph_state['collected_data']
     response_tool_message=''
+    new_collected_data=None
     if not collected_data:
         collected_data=[]
 
@@ -31,13 +32,14 @@ def add_to_collected_data(data: DataPoint, tool_call_id: Annotated[str, Injected
             datapoint['value']=data.value
             datapoint['group']=data.group
             response_tool_message=f"Updated data point with title {data.title}"
+            new_collected_data=collected_data
             break
     else:
-        collected_data.append(data.model_dump_json())
+        new_collected_data=data.model_dump()
         response_tool_message=f"Added data point with title {data.title}"
    
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
-    updates={'collected_data':collected_data,'messages':[tool_message]}
+    updates={'collected_data':new_collected_data,'messages':[tool_message]}
     
     return Command(update=updates)
       

@@ -36,6 +36,21 @@ CostixPhaseToNodeMap={
 }
 
 
+def collected_data_reducer(prev_collected_data,new_collected_data:list[dict]|dict):
+    '''
+    Reducer function for the collected_data field in the CostixState.
+        if new value is a single dict then append it to the list
+        if new value is a list then replace the old list with the new one
+    '''
+
+    if isinstance(new_collected_data,dict):
+        prev_collected_data.append(new_collected_data)
+        return prev_collected_data
+    elif isinstance(new_collected_data,list):
+        return new_collected_data
+    else:
+        print('new_collected_data is of unknown type',type(new_collected_data),new_collected_data)
+        return prev_collected_data
 
 class CostixState(TypedDict):
     '''
@@ -43,9 +58,9 @@ class CostixState(TypedDict):
     '''
     user_input: str=''                                          # >stores the user input
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
-    messages_history:list[any]=[]                   # >stores the message history for the chat(ui)
+    messages_history:list[Sequence[BaseMessage],add_messages]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING
-    collected_data:list[dict]=[]
+    collected_data:Annotated[list[dict],collected_data_reducer]=[]
     uploaded_files:list[str]=[]                                 # stores the list of files(names) uploaded by the user
 
 
