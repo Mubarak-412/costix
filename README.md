@@ -3,9 +3,8 @@ title: Costix-backend
 emoji: 🏢
 colorFrom: blue
 colorTo: purple
-sdk: gradio
-sdk_version: 5.44.1
-app_file: app.py
+sdk: docker
+app_file: Dockerfile
 pinned: false
 short_description: AI Agent that calculates the cost of cloud projects
 ---
