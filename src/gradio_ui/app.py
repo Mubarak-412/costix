@@ -84,6 +84,18 @@ css='''
     margin-left: auto;
 }
 
+#move_down_button{
+    width:40px !important;
+    height:40px !important;
+    min-width:40px !important;
+    max-width:40px !important;
+    margin-top:auto !important;
+    margin-bottom:auto !important;
+    text-align: center; !important;
+    items-align: center;
+}
+
+
 '''
 
 
@@ -97,7 +109,7 @@ chat_input=gr.MultimodalTextbox(
                     interactive=True,
                     placeholder='Enter message or upload file',
                     show_label=False,
-                    scale=1,
+                    scale=23,
                     sources=['upload'])
 
 
@@ -201,8 +213,23 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                             else:
                                 pass
                    
-                    
-                chat_input.render()
+                
+                with gr.Row(scale=1):
+                    move_down= gr.Button("↓",elem_id='move_down_button',variant='secondary')
+                    chat_input.render()
+
+                    move_down.click(
+                        fn=None,
+                        js='''
+                            function(){
+                                const messagesContainer = document.querySelector('#messages-container .styler');
+                                if(messagesContainer){
+                                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                    console.log('scrolled to bottom Manually')
+                                }
+                            }
+                        '''
+                    )
                
 
 
@@ -271,7 +298,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                 #     inputs[uploaded_file_names].append(dest_path)
                 #     yield  {uploaded_file_names:inputs[uploaded_file_names]}
             
-            text_input=inputs[chat_input]['text']
+            text_input=inputs[chat_input].get('text',None)
 
             if text_input is not None:
                 user_message=gr.ChatMessage(role='user',content=text_input)
