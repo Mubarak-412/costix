@@ -16,4 +16,4 @@
     # Or your chosen port
     EXPOSE 7860 
 
-    CMD ["python", "app.py"] # Or your application's entry point
+    ENTRYPOINT ["python", "app.py"] # Or your application's entry point
