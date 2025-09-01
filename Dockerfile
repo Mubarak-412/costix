@@ -3,10 +3,12 @@
 
     WORKDIR /app
 
+
+    COPY src/ ./src/
     COPY requirements.txt .
     COPY pyproject.toml .
-    RUN pip install --no-cache-dir -r requirements.txt
-    RUN pip install -e .
+    RUN pip install  -e .
+    RUN pip install -r requirements.txt
 
 
     COPY . .
