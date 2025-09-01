@@ -1,3 +1,4 @@
+from typing import TypeVar, Union, Callable
 from enum import StrEnum
 from typing import TypedDict,NotRequired,Annotated,Sequence
 from pydantic import BaseModel,Field
@@ -36,21 +37,40 @@ CostixPhaseToNodeMap={
 }
 
 
-def collected_data_reducer(prev_collected_data,new_collected_data:list[dict]|dict):
+
+T = TypeVar("T")
+
+def make_add_or_update_reducer(type_: type[T]) -> Callable[[list[T], Union[list[T], T]], list[T]]:
+    def add_or_update_reducer(prev_data: list[T], new_data: Union[list[T], T]) -> list[T]:
+        if isinstance(new_data, list):
+            return new_data
+        elif isinstance(new_data, type_):
+            prev_data.append(new_data)
+            return prev_data
+        else:
+            print(f"Expected {type_.__name__}, got {type(new_data).__name__}")
+            return prev_data
+            # raise (f"Expected {type_.__name__}, got {type(new_data).__name__}")
+    return add_or_update_reducer
+
+def thoughts_reducer(prev_thoughts,new_thoughts:list[str]|str):
     '''
-    Reducer function for the collected_data field in the CostixState.
-        if new value is a single dict then append it to the list
+    Reducer function for the thoughts field in the CostixState.
+        if new value is a single str then append it to the list
         if new value is a list then replace the old list with the new one
     '''
-
-    if isinstance(new_collected_data,dict):
-        prev_collected_data.append(new_collected_data)
-        return prev_collected_data
-    elif isinstance(new_collected_data,list):
-        return new_collected_data
+    if isinstance(new_thoughts,str):
+        prev_thoughts.append(new_thoughts)
+        return prev_thoughts
+    elif isinstance(new_thoughts,list):
+        return new_thoughts
     else:
-        print('new_collected_data is of unknown type',type(new_collected_data),new_collected_data)
-        return prev_collected_data
+        print('new_thoughts is of unknown type',type(new_thoughts),new_thoughts)
+        return prev_thoughts
+
+
+def replace_reducer(prev,new):
+    return new
 
 class CostixState(TypedDict):
     '''
@@ -60,7 +80,9 @@ class CostixState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
     messages_history: Annotated[Sequence[BaseMessage], add_messages]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING
-    collected_data:Annotated[list[dict],collected_data_reducer]=[]
+    thoughts:Annotated[list[str],make_add_or_update_reducer(str)]=[]
+    collected_data:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
+    solution:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     uploaded_files:list[str]=[]                                 # stores the list of files(names) uploaded by the user
 
 
@@ -86,6 +108,7 @@ class QuestionSchema(BaseModel):
     '''
     The Question that should be asked to the user
     '''
+    response:str|None=Field(None,description='a optional Field to respond to any user query ')
     title:str=Field(...,description='The title of the question')
     subtitle:str=Field(...,description='The subtitle of the question')
     type:QuestionTypes=Field(...,description='The type of the question to ask the user')

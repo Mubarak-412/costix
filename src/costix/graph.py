@@ -48,14 +48,17 @@ class CostixGraph:
         self.graph=graph.compile(checkpointer=checkpointer)
 
 
-    def initialize_thread(self,thread_id:str):
+    def initialize_thread(self,thread_id:str,state:CostixState|None=None):
         initial_state={
             'current_phase':CostixPhase.INFORMATION_GATHERING,
             'messages':[],
+            'thoughts':[],
             'messages_history':[],
             'collected_data':[],
             'uploaded_files':[],
             }
+        if state:
+            initial_state.update(state)
         config={'configurable':{'thread_id':thread_id}}
         self.graph.update_state(config,initial_state)
 

@@ -31,11 +31,65 @@ def format_file_names(files_names):
 def get_random_uuid():
     return str(uuid.uuid4())
 
+starting_ai_message=AIMessage(
+    content=json.dumps({
+        'type':'single_select',
+        'title':'What are you here for?',
+        'subtitle':'I can help you with the following usecases, or create a new usecase.',
+        'options':['Infrastructure Migration','Pre-Project Budgeting','Other','new usecase']
+    })
+)
 
 def create_new_thread():
     thread_id=get_random_uuid()
-    costix_graph.initialize_thread(thread_id)
+    costix_graph.initialize_thread(thread_id,{'messages':[starting_ai_message],'messages_history':[starting_ai_message]})
     return thread_id
+
+
+
+css='''
+#messages-container {
+  height: 75vh;              /* tweak as you like */
+  border: 1px solid var(--background-fill-secondary);
+  padding: 5px;
+  border-radius: 12px;
+  background-color: var(--background-fill-secondary); 
+#   252424
+}
+
+#messages-container > .styler {
+    overflow-y: scroll !important;
+    scrollbar-width: none;
+    display: flex;
+    background-color: var(--background-fill-secondary);
+}
+
+
+
+#messages-container .message {
+    background-color: var(--block-background-fill) !important;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+#messages-container .message.user-message {
+    width:80%;
+    margin-right: auto;
+}
+
+
+#messages-container .message.assistant-message {
+    width:80%;
+    margin-left: auto;
+}
+
+'''
+
+
+
+
+
 
 
 chat_input=gr.MultimodalTextbox(
@@ -47,10 +101,14 @@ chat_input=gr.MultimodalTextbox(
                     sources=['upload'])
 
 
-with gr.Blocks(fill_height=True) as demo:
 
+
+
+with gr.Blocks(fill_height=True,css=css) as demo:
     uploaded_file_names=gr.State([])
     collected_data=gr.State([])
+    thoughts=gr.State([])
+    solution=gr.State([])
 
     # downloadable_file_names=gr.State([])
 
@@ -68,17 +126,14 @@ with gr.Blocks(fill_height=True) as demo:
 
 
     with gr.Row():
-        with gr.Column(scale=7):
+        with gr.Column(scale=6):
             with gr.Tab(label='Chat'):
                 
 
-                chat_history=gr.State([])
-
+                chat_history=gr.State([starting_ai_message])
                 @gr.render(inputs={chat_history})
                 def render_chat_history(inputs):
-
-                    with gr.Blocks(fill_height=True) as messages_window:
-
+                    with gr.Group(elem_id='messages-container',preserved_by_key='messages-container') as messages_window:
                         for message in inputs[chat_history]:
                             # gr.Markdown(message.content)
                     
@@ -90,18 +145,24 @@ with gr.Blocks(fill_height=True) as demo:
                                 # gr.Text(value=ex,label='Json parse error')
                             
                             if isinstance(message, HumanMessage):
-                                with gr.Blocks() as user_block:
+                                with gr.Group(elem_classes=['message','user-message'],preserved_by_key=message.id) as user_block:
                                     gr.Text(value=message.content,label='user')
                             elif isinstance(message,AIMessage):
-                                with gr.Blocks() as assistant_block:
+                                with gr.Blocks(preserved_by_key=message.id) as assistant_block:
                                     if(content):
                                         # gr.Text('assistant message')
                                         q_type=content.get('type','text')
                                         title=content.get('title','No title')
                                         subtitle=content.get('subtitle','No subtitle')
                                         options=content.get('options',[])
-                                        with gr.Group() as question_block:
-                                            gr.Text(value=title,label='AI Response',text_align='right')
+                                        is_last_message=inputs[chat_history].index(message)==len(inputs[chat_history])
+                                        response=content.get('response',None)
+                                        
+
+                                        with gr.Group(elem_classes=['message','assistant-message']) as question_block:
+                                            if response:
+                                                gr.Text(value=response,label='AI Response',text_align='right')
+                                            gr.Text(value=title,label='AI Response',text_align='right',autoscroll=is_last_message,autofocus=is_last_message)
                                             # gr.Markdown(f'# {title}')
                                             gr.Text(value=subtitle,show_label=False,text_align='right',container=False)
                                             
@@ -119,7 +180,7 @@ with gr.Blocks(fill_height=True) as demo:
                                                 
                                             
                                             if q_type=='single_select':
-                                                single_select=gr.Radio(options,label='Select One',rtl=True)  
+                                                single_select=gr.Radio(options,label='Select One')  
                                                 single_select.change(
                                                     fn=submit_options,
                                                     inputs=[single_select],
@@ -139,31 +200,64 @@ with gr.Blocks(fill_height=True) as demo:
                                         gr.Text(value=message.content,label='Json parse error')
                             else:
                                 pass
-
+                   
+                    
                 chat_input.render()
                
 
 
-        with gr.Column(scale=3) as collectedDataCollumn:
+        with gr.Column(scale=4) as rightSideBar:
+
+            with gr.Tab('Thought Process') as thoughts_tab:
+                
+                @gr.render(inputs=[thoughts])
+                def render_thoughts(thoughts):
+                    if not thoughts:
+                        return 
+                    with gr.Group():
+                        for thought in thoughts:
+                            gr.Radio([thought],value=thought,show_label=False)
 
             with gr.Tab('Collected Data') as collected_data_tab:
-                gr.DataFrame(value=lambda x:pd.DataFrame(x),headers=['title','value','group'],inputs=[collected_data],label='Collected Data')
-                # gr.Text(value=lambda x:json.dumps(x),inputs=[collected_data],label='Collected Data Json')
-    
-        @chat_input.submit(
-                inputs={
-                    chat_history,
-                    chat_input,
-                    uploaded_file_names,
-                    thread_id,
-                    collected_data
-                    },
-                outputs={
-                    chat_history,
-                    chat_input,
-                    uploaded_file_names,
-                    collected_data
-                    })
+                @gr.render(inputs=[collected_data])
+                def format_collected_data(collected_data):
+
+                    if not collected_data:
+                        return gr.Markdown('No data collected')
+
+                    # Convert list[dict] → DataFrame
+                    df = pd.DataFrame(collected_data)
+
+                    # Ensure required columns exist
+                    if not {"group", "title", "value"}.issubset(df.columns):
+                        return gr.Markdown('No data collected')
+
+                    # Group by 'group'
+                    markdown_parts = []
+                    for group, gdf in df.groupby("group", sort=False):   # sort=False = keep input order
+                        markdown_parts.append(f"## {group}")
+                        for _, row in gdf.iterrows():
+                            markdown_parts.append(f"\n&emsp;{row['title']}: {row['value']}")
+                        markdown_parts.append("")  # spacing between groups
+
+                    return gr.Markdown("\n".join(markdown_parts))
+
+            with gr.Tab('Solution') as solution_tab:
+                @gr.render(inputs=[solution])
+                def render_solution(solution):
+
+                    if not solution:
+                        return gr.Markdown('Solution yet to be generated')
+                    df=pd.DataFrame(solution)
+                    markdown_parts=[]
+                    for group,gdf in df.groupby('group'):
+                        markdown_parts.append(f'## {group}')
+                        for _,row in gdf.iterrows():
+                            markdown_parts.append(f'\n&emsp;{row["title"]}: {row["value"]}')
+                        markdown_parts.append("")  # spacing between groups
+                    return gr.Markdown('\n'.join(markdown_parts))
+
+
         def handle_input(inputs):
 
             # for file_path in inputs[chat_input]['files']:
@@ -204,7 +298,9 @@ with gr.Blocks(fill_height=True) as demo:
 
             yield {
                 collected_data:response['collected_data'],
-                chat_history:inputs[chat_history]+response['messages_history']
+                thoughts:response['thoughts'],
+                solution:response['solution'],
+                chat_history:response['messages_history']
             }
 
 
@@ -266,15 +362,71 @@ with gr.Blocks(fill_height=True) as demo:
                 
             #     yield {chat_history:inputs[chat_history]}
 
-   
-    @reset_thread.click(outputs={thread_id,uploaded_file_names,chat_history,chat_input})
+        
+        chat_input.submit(
+            fn=handle_input,
+            inputs={
+                    chat_history,
+                    chat_input,
+                    uploaded_file_names,
+                    thread_id,
+                    thoughts,
+                    collected_data,
+                    solution,
+                    },
+                outputs={
+                    chat_history,
+                    chat_input,
+                    uploaded_file_names,
+                    thoughts,
+                    collected_data,
+                    solution,
+                    }
+        )
+        
+        
+        
+        gr.on(
+            triggers=[
+                chat_history.change,
+                chat_input.submit,
+                thoughts.change,
+                collected_data.change,
+                solution.change,
+                ],
+            fn=None,
+            js='''
+                function scrollMessagesContainer() {
+                    function scrollToBottom(container_selector) {
+
+                        const container=document.querySelector(container_selector);
+                        if(container) {
+                            container.scrollTop = container.scrollHeight;
+                            console.log('scrolled to bottom')
+                        }
+                    }
+                    setTimeout(() => {
+                        scrollToBottom('#messages-container .styler');
+                    }, 2000);
+                }
+            ''',
+            inputs=[],
+            outputs=[]
+)
+        
+        
+
+    @reset_thread.click(outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,chat_input})
     def reset_app():
 
         new_thread_id=create_new_thread()
         return {
             thread_id:new_thread_id,
             uploaded_file_names:[],
-            chat_history:[],
+            chat_history:[starting_ai_message],
+            thoughts:[],
+            solution:[],
+            collected_data:[],
             chat_input:None
         }
 

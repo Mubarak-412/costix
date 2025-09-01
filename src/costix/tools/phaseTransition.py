@@ -24,8 +24,9 @@ def update_current_phase(
     if not next_node:
         return f"Phase {phase} is not a valid phase."
     
+    thought=f'Moving to {phase} Phase'
     tool_message=ToolMessage(content=f"Updated current phase to {phase}",tool_call_id=tool_call_id)
-    return Command(update={'current_phase':phase,'messages':[tool_message]},goto=next_node)
+    return Command(update={'current_phase':phase,'messages':[tool_message],'thoughts':[thought]},goto=next_node)
 
 
 

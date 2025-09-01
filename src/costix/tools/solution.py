@@ -13,7 +13,7 @@ class SolutionDataPoint(BaseModel):
     The data point that should be added to the solution
     '''
     group:str=Field(...,description='The title of the group')
-    key:str=Field(...,description='The key of the data point')
+    title:str=Field(...,description='The key of the data point')
     value:str=Field(...,description='The value of the data point')
 
 def add_to_solution(
@@ -21,19 +21,24 @@ def add_to_solution(
         data_point:SolutionDataPoint,
         solution: Annotated[list, InjectedState('solution')]
     ):
-    solution_updated=False
+
+    updated_solution=None
+    
     response_tool_message=''
+    thought=None
     for item in solution:
-        if item['group']==data_point.group and item['key']==data_point.key:
+        if item['group']==data_point.group and item['title']==data_point.title:
             item['value']=data_point.value
-            solution_updated=True
-            response_tool_message=f"Updated existing data point with group {data_point.group} and key {data_point.key}"
+            updated_solution=solution
+            response_tool_message=f"Updated existing data point with group {data_point.group} and title {data_point.title}"
+            thought=f"Updating Solution for {data_point.title}"
             break
-    if not solution_updated:
-        solution+=[data_point.model_dump()]
-        response_tool_message=f"Added data point with group {data_point.group} and key {data_point.key}"
+    if not updated_solution:
+        updated_solution=data_point.model_dump()
+        response_tool_message=f"Added data point with group {data_point.group} and title {data_point.title}"
+        thought=f"Updating Solution for {data_point.title}"
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
-    return Command(update={'solution':solution,'messages':[tool_message]})
+    return Command(update={'solution':updated_solution,'messages':[tool_message],'thoughts':thought})
 
 add_to_solution_tool=StructuredTool.from_function(
     func=add_to_solution,
