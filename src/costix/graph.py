@@ -6,8 +6,13 @@ from costix.schemas import (
     CostixNodes,
     CostixPhaseToNodeMap
     )
-from costix.agents import get_info_agent,get_solution_agent
+from costix.agents import (
+    get_info_agent,
+    get_solution_agent,
+    get_technical_agent
+)
 from costix.model import get_model 
+from costix.tools import get_jupyter_repl_tool
     
 def create_agent_node(agent:any):
     'creates a graph node from Agent, allows customizing the updates made by agent'
@@ -26,7 +31,8 @@ def create_agent_node(agent:any):
 
 ALL_AGENT_NODES=[
     CostixNodes.INFO_AGENT,
-    CostixNodes.SOLUTION_AGENT
+    CostixNodes.SOLUTION_AGENT,
+    CostixNodes.TECHNICAL_AGENT
     ]
 
 
@@ -38,11 +44,14 @@ class CostixGraph:
     def __init__(self,checkpointer:any=None):
         model=get_model()
         graph=StateGraph(CostixState)
-        self.info_agent=get_info_agent(model)
-        self.solution_agent=get_solution_agent(model)
+        self.python_tool=get_jupyter_repl_tool()
+        self.info_agent=get_info_agent(model,additional_tools=[self.python_tool])
+        self.solution_agent=get_solution_agent(model,additional_tools=[self.python_tool])
+        self.technical_agent=get_technical_agent(model,additional_tools=[self.python_tool])
 
         graph.add_node(CostixNodes.INFO_AGENT,self.info_agent)
-        graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent)  
+        graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent) 
+        graph.add_node(CostixNodes.TECHNICAL_AGENT,self.technical_agent)
         graph.add_conditional_edges(START, lambda state:state['current_phase'],CostixPhaseToNodeMap)
         graph.add_edge(ALL_AGENT_NODES,END)
         self.graph=graph.compile(checkpointer=checkpointer)
@@ -55,6 +64,8 @@ class CostixGraph:
             'thoughts':[],
             'messages_history':[],
             'collected_data':[],
+            'solution':[],
+            'technical_requirements':[],
             'uploaded_files':[],
             }
         if state:

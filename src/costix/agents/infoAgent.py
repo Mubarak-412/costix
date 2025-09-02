@@ -46,7 +46,6 @@ ensure that after every interaction when new information is received update the 
 you will answer the users queries and help me in the estimation process
 respond to any user query in the response field of the ask_question_tool
 
-
 you will use the add_to_collected_data_tool to add the information to the list of requirements
 use the add_to_collected_data_tool to update the information on already existing data points 
 and use the remove_from_collected_data_tool to remove the information from the list of requirements
@@ -55,6 +54,7 @@ once there is enough information collected use the phase transition tool to the 
 
 you have access to a persistant python runtime that can be used to perform any calculations and analysis on the user uploaded files 
 and read the user uploaded files and perform any necessary preprocessing
+if user provides any specific data as a message , like rates or table of resources etc, add that to the python runtime (as a dataframe recommended) to be used in future calculations
 
 always use the ask_question_tool to ask the user questions,only ask questions using the tool do not provide additional text other than the tool params
 
@@ -77,10 +77,10 @@ promptTemplate=ChatPromptTemplate.from_messages(
 )
 
 info_agent_tools=[
+    ask_question_tool,
+    update_current_phase_tool,
     add_to_collected_data_tool,
     remove_from_collected_data_tool,
-    update_current_phase_tool,
-    ask_question_tool
 ]
 
 def get_info_agent(model:BaseChatModel,additional_tools:list|None=None):
@@ -89,6 +89,8 @@ def get_info_agent(model:BaseChatModel,additional_tools:list|None=None):
     agrs:
         model: BaseChatModel
             the language model to be used by the agent
+        additional_tools: list[BaseTool]
+            additional tools to be used by the agent
      '''
     agent= create_react_agent(
         model,

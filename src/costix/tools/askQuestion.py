@@ -17,7 +17,6 @@ from langgraph.types import Command
 def ask_question(
         question:QuestionSchema,
         tool_call_id: Annotated[str, InjectedToolCallId],
-        graph_state: Annotated[dict, InjectedState]
     ):
     '''
     used to present a question to the user, multi select questions are prefered for better user experience

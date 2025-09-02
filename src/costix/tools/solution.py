@@ -19,7 +19,7 @@ class SolutionDataPoint(BaseModel):
 def add_to_solution(
         tool_call_id: Annotated[str, InjectedToolCallId],
         data_point:SolutionDataPoint,
-        solution: Annotated[list, InjectedState('solution')]
+        solution: Annotated[list[dict], InjectedState('solution')]
     ):
 
     updated_solution=None
@@ -51,24 +51,25 @@ add_to_solution_tool=StructuredTool.from_function(
 
 def remove_from_solution(
         group:str,
-        key:str,
+        title:str,
         tool_call_id: Annotated[str, InjectedToolCallId],
-        solution: Annotated[list, InjectedState('solution')]
+        solution: Annotated[list[dict], InjectedState('solution')]
     ):
 
     datapoint_deleted=False
     for datapoint in solution:
-        if datapoint['group']==group and datapoint['key']==key:
+        if datapoint['group']==group and datapoint['title']==title:
             solution.remove(datapoint)
             datapoint_deleted=True
             break
 
     if not datapoint_deleted:
-        return f"Data point with group {group} and key {key} not found in solution"
+        return f"Data point with group {group} and title {title} not found in solution"
     else:
-        tool_response_message=f"Removed data point with group {group} and key {key}"
+        tool_response_message=f"Removed data point with group {group} and title {title}"
         tool_message=ToolMessage(content=tool_response_message,tool_call_id=tool_call_id)
-        return Command(update={'solution':solution,'messages':[tool_message]})
+        thought=f"Removing {title} from solution"
+        return Command(update={'solution':solution,'messages':[tool_message],'thoughts':thought})
 
 
 remove_from_solution_tool=StructuredTool.from_function(
@@ -78,6 +79,6 @@ remove_from_solution_tool=StructuredTool.from_function(
     used to remove a data point from the solution
     Args:
         group: The group of the data point
-        key: The key of the data point
+        title: The title of the data point
     ''',
 )

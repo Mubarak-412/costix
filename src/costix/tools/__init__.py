@@ -3,3 +3,4 @@ from costix.tools.phaseTransition import update_current_phase_tool
 from costix.tools.askQuestion import ask_question_tool
 from costix.tools.jupyterREPL import get_jupyter_repl_tool
 from costix.tools.solution import add_to_solution_tool,remove_from_solution_tool
+from costix.tools.technical import add_to_technical_requirements_tool,remove_from_technical_requirements_tool

@@ -121,6 +121,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
     collected_data=gr.State([])
     thoughts=gr.State([])
     solution=gr.State([])
+    technical_requirements=gr.State([])
 
     # downloadable_file_names=gr.State([])
 
@@ -283,6 +284,32 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                             markdown_parts.append(f'\n&emsp;{row["title"]}: {row["value"]}')
                         markdown_parts.append("")  # spacing between groups
                     return gr.Markdown('\n'.join(markdown_parts))
+            
+            with gr.Tab('Technical') as technical_tab:
+                @gr.render(inputs=[technical_requirements])
+                def render_technical_requirements(technical_requirements):
+                    if not technical_requirements:
+                        return gr.Markdown('Technical requirements yet to be generated')
+
+                    df = pd.DataFrame(technical_requirements)
+                    markdown_parts = []
+
+                    for group, gdf in df.groupby('group'):
+                        markdown_parts.append(f"## {group}")
+                        # Build markdown table
+                        table_header = "| Component | Resource Type / Service | Recommended Sizing / Type | Quantity / Notes |"
+                        table_sep = "|-----------|--------------------------|----------------------------|------------------|"
+                        table_rows = [
+                            f"| {row['component']} | {row['resource_type_or_service']} | {row['recommended_sizing_or_type']} | {row['quantity_or_notes']} |"
+                            for _, row in gdf.iterrows()
+                        ]
+                        markdown_parts.append(table_header)
+                        markdown_parts.append(table_sep)
+                        markdown_parts.extend(table_rows)
+                        markdown_parts.append("")  # spacing after table
+
+                    return gr.Markdown("\n".join(markdown_parts))
+
 
 
         def handle_input(inputs):
@@ -327,6 +354,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                 collected_data:response['collected_data'],
                 thoughts:response['thoughts'],
                 solution:response['solution'],
+                technical_requirements:response['technical_requirements'],
                 chat_history:response['messages_history']
             }
 
@@ -400,6 +428,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                     thoughts,
                     collected_data,
                     solution,
+                    technical_requirements,
                     },
                 outputs={
                     chat_history,
@@ -408,6 +437,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                     thoughts,
                     collected_data,
                     solution,
+                    technical_requirements,
                     }
         )
         
