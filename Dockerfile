@@ -1,5 +1,5 @@
     # Example Dockerfile for a Hugging Face application
-    FROM python:3.9-slim-buster
+    FROM python:3.9
 
     WORKDIR /app
 
@@ -16,4 +16,5 @@
     # Or your chosen port
     EXPOSE 7860 
 
-    ENTRYPOINT ["python", "app.py"] # Or your application's entry point
+    
+    CMD ["python", "app.py"] 
