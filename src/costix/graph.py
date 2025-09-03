@@ -50,7 +50,7 @@ class CostixGraph:
         self.technical_agent=get_technical_agent(model,additional_tools=[self.python_tool])
 
         graph.add_node(CostixNodes.INFO_AGENT,self.info_agent)
-        graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent) 
+        graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent)
         graph.add_node(CostixNodes.TECHNICAL_AGENT,self.technical_agent)
         graph.add_conditional_edges(START, lambda state:state['current_phase'],CostixPhaseToNodeMap)
         graph.add_edge(ALL_AGENT_NODES,END)

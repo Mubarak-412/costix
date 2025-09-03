@@ -50,7 +50,7 @@ you will use the add_to_collected_data_tool to add the information to the list o
 use the add_to_collected_data_tool to update the information on already existing data points 
 and use the remove_from_collected_data_tool to remove the information from the list of requirements
 
-once there is enough information collected use the phase transition tool to the next phase of the estimation
+once there is enough information collected use the phase transition tool to the next phase(SOLUTION_GENERATION) of the estimation
 
 you have access to a persistant python runtime that can be used to perform any calculations and analysis on the user uploaded files 
 and read the user uploaded files and perform any necessary preprocessing
@@ -84,7 +84,7 @@ info_agent_tools=[
 ]
 
 def get_info_agent(model:BaseChatModel,additional_tools:list|None=None):
-    ''' creates a instnce of information gathering agent
+    ''' creates a instance of information gathering agent
     
     agrs:
         model: BaseChatModel
