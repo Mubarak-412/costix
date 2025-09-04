@@ -4,11 +4,20 @@ import uuid
 import gradio as gr
 import json
 import pandas as pd
+from backup.gradio_ui_before_refactor import UPLOAD_DIR
 from costix.graph import CostixGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from gradio_ui.gradioComponents import create_question_component
 
+
+current_folder = os.path.dirname(os.path.abspath(__file__))
+
+
+UPLOAD_DIR = os.path.abspath(os.path.join(current_folder, "..", "..", "uploads"))
+
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 
 
 checkpoint=MemorySaver()
@@ -314,16 +323,16 @@ with gr.Blocks(fill_height=True,css=css) as demo:
 
         def handle_input(inputs):
 
-            # for file_path in inputs[chat_input]['files']:
-            #     filename = os.path.basename(file_path)
-            #     dest_path = os.path.join(UPLOAD_DIR, filename)
+            for file_path in inputs[chat_input]['files']:
+                filename = os.path.basename(file_path)
+                file_absolute_path = os.path.abspath(os.path.join(UPLOAD_DIR, filename))
                 
-                # if not os.path.exists(dest_path):
-                #     os.rename(file_path, dest_path)
+                if not os.path.exists(file_absolute_path):
+                    os.rename(file_path, file_absolute_path)
 
-                # if dest_path not in inputs[uploaded_file_names]:
-                #     inputs[uploaded_file_names].append(dest_path)
-                #     yield  {uploaded_file_names:inputs[uploaded_file_names]}
+                if file_absolute_path not in inputs[uploaded_file_names]:
+                    inputs[uploaded_file_names].append(file_absolute_path)
+                    yield  {uploaded_file_names:inputs[uploaded_file_names]}
             
             text_input=inputs[chat_input].get('text',None)
 
@@ -473,8 +482,14 @@ with gr.Blocks(fill_height=True,css=css) as demo:
         
         
 
-    @reset_thread.click(outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,chat_input})
-    def reset_app():
+    @reset_thread.click(
+        inputs={thread_id},
+        outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,chat_input})
+    def reset_app(inputs):
+
+        # # Reset the previous thread and shift to new theread id
+        current_thread_id=inputs[thread_id]
+        costix_graph.initialize_thread(thread_id=current_thread_id)
 
         new_thread_id=create_new_thread()
         return {

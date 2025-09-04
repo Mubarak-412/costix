@@ -9,3 +9,9 @@ ipykernel
 
 #optional
 gradio
+
+
+# python runtime dependencies for agent 
+openpyxl
+pandas
+numpy

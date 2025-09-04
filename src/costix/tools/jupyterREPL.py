@@ -1,12 +1,14 @@
 import jupyter_client
 import queue
 import atexit
-from typing import Dict
+from typing import Annotated, Dict
 
 # Using modern Pydantic import
+from langchain_core.messages import ToolMessage
+from langgraph.prebuilt import InjectedState
+from langgraph.types import Command
 from pydantic import BaseModel, Field
-from langchain_core.tools import StructuredTool, BaseTool
-
+from langchain_core.tools import InjectedToolCallId, StructuredTool, BaseTool
 # --- Core REPL Class (Jupyter Kernel) ---
 # This class manages a persistent Jupyter kernel and communicates with it.
 class JupyterKernelREPL:
@@ -120,12 +122,14 @@ class JupyterKernelREPL:
 
         return "Command executed with no output."
 
-
 # --- Tool Factory Function ---
 
 class PythonREPLInput(BaseModel):
     command: str = Field(description="The Python code to execute in the persistent session.")
+    thought: str = Field(description="The thought process behind the command.(1 line sentence)")
+    tool_call_id:Annotated[str,InjectedToolCallId]
 
+    
 def get_jupyter_repl_tool() -> BaseTool:
     """
     Factory function that creates and returns a single, stateful Jupyter REPL tool.
@@ -135,13 +139,19 @@ def get_jupyter_repl_tool() -> BaseTool:
     repl_session = JupyterKernelREPL()
 
     # The run function is now simpler, just passing the command.
-    def _run_jupyter_repl(command: str) -> str:
-        return repl_session.run_command(command)
+    def _run_jupyter_repl(command, thought,tool_call_id) -> str:
+        execution_result=repl_session.run_command(command)
+        tool_message=ToolMessage(content=execution_result,tool_call_id=tool_call_id)
+        updates={'messages':[tool_message],'thoughts':thought}
+        return Command(update=updates)
 
     tool = StructuredTool.from_function(
         func=_run_jupyter_repl,
         name="Python_REPL",
-        description="A persistent Python REPL powered by a Jupyter Kernel. The session starts and stops automatically. Just provide the Python code to run., print the variables to see the values",
+        description='''
+        A persistent Python REPL powered by a Jupyter Kernel. The session starts and stops automatically. Just provide the Python code to run.
+        values must be printed to stdout to be accessed by the agent.
+        ''',
         args_schema=PythonREPLInput
     )
     return tool
