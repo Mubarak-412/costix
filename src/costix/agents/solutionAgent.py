@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from langchain.chat_models.base import BaseChatModel
 from langgraph.prebuilt import create_react_agent
+from costix.agents.utils import create_costix_agent
 from costix.schemas import CostixAgentState
 
 
@@ -83,11 +84,11 @@ def get_solution_agent(model:BaseChatModel,additional_tools:list|None=None):
         additional_tools: list[BaseTool]
             additional tools to be used by the agent
      '''
-    agent= create_react_agent(
+    tools=solution_agent_tools+additional_tools if additional_tools else solution_agent_tools
+    agent= create_costix_agent(
         model,
-        prompt=promptTemplate,
-        tools=solution_agent_tools+additional_tools if additional_tools else solution_agent_tools,
-        state_schema=CostixAgentState
+        tools,
+        promptTemplate,
         )
     return agent
     

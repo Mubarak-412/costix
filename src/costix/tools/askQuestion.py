@@ -17,6 +17,7 @@ from langgraph.types import Command
 def ask_question(
         question:QuestionSchema,
         tool_call_id: Annotated[str, InjectedToolCallId],
+        agent_state: Annotated[dict, InjectedState],
     ):
     '''
     used to present a question to the user, multi select questions are prefered for better user experience
@@ -25,7 +26,19 @@ def ask_question(
     question_json=question.model_dump_json()
     question_message=AIMessage(question_json)
     tool_message=ToolMessage('Question displayed Sucessfully',tool_call_id=tool_call_id)
-    return Command(update={'messages':[tool_message],'messages_history':[question_message]},goto=END)
+    messages=agent_state['messages']
+    messages_history=agent_state['messages_history']
+
+    new_updates={
+        'messages':messages+[tool_message],
+        'messages_history':messages_history+[question_message]
+    }
+    updates=agent_state.copy()
+    updates.update(new_updates)
+    return Command(
+        update=updates,
+        graph=Command.PARENT,
+        goto=END)
 
 
 ask_question_tool=StructuredTool.from_function(

@@ -10,12 +10,12 @@ from costix.schemas import CostixPhase,CostixPhaseToNodeMap
 def update_current_phase(
     phase: CostixPhase,
     tool_call_id: Annotated[str, InjectedToolCallId], 
-    graph_state: Annotated[dict, InjectedState]):
+    agent_state: Annotated[dict, InjectedState]):
     """
     Update the current phase of the COSTIX estimation process.
     """
 
-    current_phase=graph_state['current_phase']
+    current_phase=agent_state['current_phase']
     if current_phase==phase:
         return f"Phase {phase} is already the current phase."
 
@@ -26,7 +26,22 @@ def update_current_phase(
     
     thought=f'Moving to {phase} Phase'
     tool_message=ToolMessage(content=f"Updated current phase to {phase}",tool_call_id=tool_call_id)
-    return Command(update={'current_phase':phase,'messages':[tool_message],'thoughts':[thought]},goto=next_node)
+
+
+    # this update sends the current state of the agent to the next agent ( different a agent updating its state)
+    current_agent_messages=agent_state['messages']
+    updates_to_apply={
+        'current_phase':phase,
+        'messages':current_agent_messages+[tool_message],
+        'thoughts':[thought]
+    }
+    new_state=agent_state.copy()
+    new_state.update(updates_to_apply)
+    return Command(
+        update=new_state,
+        graph=Command.PARENT,
+        goto=next_node,
+        )
 
 
 
