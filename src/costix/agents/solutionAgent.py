@@ -9,7 +9,9 @@ from costix.tools import (
     update_current_phase_tool,
     ask_question_tool,
     add_to_solution_tool,
-    remove_from_solution_tool
+    remove_from_solution_tool,
+    add_to_collected_data_tool,
+    remove_from_collected_data_tool
     )
 
 
@@ -73,6 +75,8 @@ solution_agent_tools=[
     update_current_phase_tool,
     add_to_solution_tool,
     remove_from_solution_tool,
+    add_to_collected_data_tool,
+    remove_from_collected_data_tool,
 ]
 
 def get_solution_agent(model:BaseChatModel,additional_tools:list|None=None):
