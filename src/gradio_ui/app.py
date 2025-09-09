@@ -41,12 +41,15 @@ def get_random_uuid():
     return str(uuid.uuid4())
 
 starting_ai_message=AIMessage(
-    content=json.dumps({
-        'type':'single_select',
-        'title':'What are you here for?',
-        'subtitle':'I can help you with the following usecases, or create a new usecase.',
-        'options':['Infrastructure Migration','Pre-Project Budgeting','Other','new usecase']
-    })
+    content=json.dumps(
+        {
+            'question':{
+                'type':'single_select',
+                'title':'What are you here for?',
+                'subtitle':'I can help you with the following usecases, or create a new usecase.',
+                'options':['Infrastructure Migration','Pre-Project Budgeting','Other','new usecase']
+            }
+        })
 )
 
 def create_new_thread():
@@ -135,7 +138,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
     # downloadable_file_names=gr.State([])
 
 
-    thread_id=gr.State(value=(create_new_thread()))
+    thread_id=gr.State(create_new_thread)
 
     # code_snipets=gr.State([])
     
@@ -173,51 +176,59 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                                 with gr.Blocks(preserved_by_key=message.id) as assistant_block:
                                     if(content):
                                         # gr.Text('assistant message')
-                                        q_type=content.get('type','text')
-                                        title=content.get('title','No title')
-                                        subtitle=content.get('subtitle','No subtitle')
-                                        options=content.get('options',[])
-                                        is_last_message=inputs[chat_history].index(message)==len(inputs[chat_history])
-                                        response=content.get('response',None)
+                                        question=content.get('question')
+                                        if(not question):
+                                            question={}
+                                        print('content')
+                                        print(content)
+                                        print('question')
+                                        print(question)
+                                        print('question type',type(question))
+                                        
+                                        title=question.get('title','No title')
+                                        subtitle=question.get('subtitle','No subtitle')
+                                        options=question.get('options',[])
+                                        q_type=question.get('type','text')
+                                        text_response=content.get('text',None)
                                         
 
                                         with gr.Group(elem_classes=['message','assistant-message']) as question_block:
-                                            if response:
-                                                gr.Text(value=response,label='AI Response',text_align='right')
-                                            gr.Text(value=title,label='AI Response',text_align='right',autoscroll=is_last_message,autofocus=is_last_message)
-                                            # gr.Markdown(f'# {title}')
-                                            gr.Text(value=subtitle,show_label=False,text_align='right',container=False)
+                                            if text_response:
+                                                gr.Text(value=text_response,label='AI Response',)
+                                            
+                                            if question:
+                                                gr.Text(value=title,label='AI Response',text_align='right')
+                                                # gr.Markdown(f'# {title}')
+                                                gr.Text(value=subtitle,show_label=False,text_align='right',container=False)
                                             
 
                                             
                                             
-                                            def submit_options(options):
-                                                options_str=''
-                                                if isinstance(options,list):
-                                                    options_str=','.join(options)
-                                                else:
-                                                    options_str=options
-                                                return {chat_input:{'text':options_str}}
+                                                def submit_options(options):
+                                                    options_str=''
+                                                    if isinstance(options,list):
+                                                        options_str=','.join(options)
+                                                    else:
+                                                        options_str=options
+                                                    return {chat_input:{'text':options_str}}
 
                                                 
                                             
-                                            if q_type=='single_select':
-                                                single_select=gr.Radio(options,label='Select One')  
-                                                single_select.change(
-                                                    fn=submit_options,
-                                                    inputs=[single_select],
-                                                    outputs={chat_input}
-                                                )
+                                                if q_type=='single_select':
+                                                    single_select=gr.Radio(options,label='Select One')  
+                                                    single_select.change(
+                                                        fn=submit_options,
+                                                        inputs=[single_select],
+                                                        outputs={chat_input}
+                                                    )
 
-                                            elif q_type=='multi_select':
-                                                checkbox_group=gr.CheckboxGroup(options,label='options')    
-                                                checkbox_group.change(
-                                                    fn=submit_options,
-                                                    inputs=[checkbox_group],
-                                                    outputs={chat_input}
-                                                )
-                                            
-                                           
+                                                elif q_type=='multi_select':
+                                                    checkbox_group=gr.CheckboxGroup(options,label='options')    
+                                                    checkbox_group.change(
+                                                        fn=submit_options,
+                                                        inputs=[checkbox_group],
+                                                        outputs={chat_input}
+                                                    )
                                     else:
                                         gr.Text(value=message.content,label='Json parse error')
                             else:

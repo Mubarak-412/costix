@@ -120,7 +120,7 @@ class JupyterKernelREPL:
         if output:
             return f"--- STDOUT ---\n{output.strip()}\n"
 
-        return "Command executed with no output."
+        return "Command executed with no output. use print() to display output."
 
 # --- Tool Factory Function ---
 

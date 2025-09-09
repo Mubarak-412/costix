@@ -110,7 +110,6 @@ class QuestionSchema(BaseModel):
     '''
     The Question that should be asked to the user
     '''
-    response:str|None=Field(None,description='a optional Field to respond to any user query ')
     title:str=Field(...,description='The title of the question')
     subtitle:str=Field(...,description='The subtitle of the question')
     type:QuestionTypes=Field(...,description='The type of the question to ask the user')

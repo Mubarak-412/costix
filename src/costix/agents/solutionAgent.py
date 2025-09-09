@@ -6,6 +6,8 @@ from costix.schemas import CostixAgentState
 
 
 from costix.tools import (
+    web_search_tool,
+    conversation_tool,
     update_current_phase_tool,
     ask_question_tool,
     add_to_solution_tool,
