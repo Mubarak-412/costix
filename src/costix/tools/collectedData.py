@@ -17,11 +17,13 @@ class DataPoint(BaseModel):
     value:str=Field(...,description="The value of the data point.")
     group:str=Field(...,description="The group of the data point.")
 
-def add_to_collected_data(data: DataPoint, tool_call_id: Annotated[str, InjectedToolCallId], graph_state: Annotated[dict, InjectedState]):
+def add_to_collected_data(
+        data: DataPoint,
+        tool_call_id: Annotated[str, InjectedToolCallId], 
+        collected_data: Annotated[list[dict], InjectedState('collected_data')]):
     """
     Add data points to the collected data.
     """
-    collected_data=graph_state['collected_data']
     response_tool_message=''
     new_collected_data=None
     thought=None
@@ -29,9 +31,8 @@ def add_to_collected_data(data: DataPoint, tool_call_id: Annotated[str, Injected
         collected_data=[]
 
     for datapoint in collected_data:
-        if datapoint['title']==data.title:
+        if datapoint['group']==data.group and datapoint['title']==data.title:
             datapoint['value']=data.value
-            datapoint['group']=data.group
             response_tool_message=f"Updated data point with title {data.title}"
             new_collected_data=collected_data
             thought=f"Updating Requirements for {data.title}"
@@ -57,14 +58,16 @@ add_to_collected_data_tool = StructuredTool.from_function(
 
 
 
-def remove_from_collected_data(title: str, graph_state: Annotated[dict, InjectedState]):
+def remove_from_collected_data(
+    title: str, 
+    tool_call_id: Annotated[str, InjectedToolCallId],
+    collected_data: Annotated[list[dict], InjectedState('collected_data')]):
     """
     Remove data points from the collected data.
     Args:
         title (str): The title of the data point to remove.
     """
 
-    collected_data=graph_state['collected_data']
     
     if not collected_data:
         return "No collected data to remove."
@@ -82,7 +85,7 @@ def remove_from_collected_data(title: str, graph_state: Annotated[dict, Injected
     else:
         response_tool_message=f'Removed data point with title {title} from collected data.'
     print(response_tool_message)
-    tool_message=ToolMessage(content=response_tool_message)
+    tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
     return Command(update={'collected_data':collected_data,'messages':[tool_message]})
 
 

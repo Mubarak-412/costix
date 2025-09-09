@@ -11,9 +11,10 @@ GPT_5='gpt-5'
 
 
 OPENAI_MODEL=GPT_4_1
+USE_RESPONSE_API=True
 
 def get_model(model_name:str=OPENAI_MODEL)->BaseChatModel:
     '''
     returns the language model to be used by the agent
     '''
-    return ChatOpenAI(model_name=model_name)
+    return ChatOpenAI(model_name=model_name,use_responses_api=USE_RESPONSE_API)

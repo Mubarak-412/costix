@@ -4,11 +4,20 @@ import uuid
 import gradio as gr
 import json
 import pandas as pd
+from backup.gradio_ui_before_refactor import UPLOAD_DIR
 from costix.graph import CostixGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from gradio_ui.gradioComponents import create_question_component
 
+
+current_folder = os.path.dirname(os.path.abspath(__file__))
+
+
+UPLOAD_DIR = os.path.abspath(os.path.join(current_folder, "..", "..", "uploads"))
+
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 
 
 checkpoint=MemorySaver()
@@ -32,12 +41,15 @@ def get_random_uuid():
     return str(uuid.uuid4())
 
 starting_ai_message=AIMessage(
-    content=json.dumps({
-        'type':'single_select',
-        'title':'What are you here for?',
-        'subtitle':'I can help you with the following usecases, or create a new usecase.',
-        'options':['Infrastructure Migration','Pre-Project Budgeting','Other','new usecase']
-    })
+    content=json.dumps(
+        {
+            'question':{
+                'type':'single_select',
+                'title':'What are you here for?',
+                'subtitle':'I can help you with the following usecases, or create a new usecase.',
+                'options':['Infrastructure Migration','Pre-Project Budgeting','Other','new usecase']
+            }
+        })
 )
 
 def create_new_thread():
@@ -121,11 +133,12 @@ with gr.Blocks(fill_height=True,css=css) as demo:
     collected_data=gr.State([])
     thoughts=gr.State([])
     solution=gr.State([])
+    technical_requirements=gr.State([])
 
     # downloadable_file_names=gr.State([])
 
 
-    thread_id=gr.State(value=(create_new_thread()))
+    thread_id=gr.State(create_new_thread)
 
     # code_snipets=gr.State([])
     
@@ -163,51 +176,59 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                                 with gr.Blocks(preserved_by_key=message.id) as assistant_block:
                                     if(content):
                                         # gr.Text('assistant message')
-                                        q_type=content.get('type','text')
-                                        title=content.get('title','No title')
-                                        subtitle=content.get('subtitle','No subtitle')
-                                        options=content.get('options',[])
-                                        is_last_message=inputs[chat_history].index(message)==len(inputs[chat_history])
-                                        response=content.get('response',None)
+                                        question=content.get('question')
+                                        if(not question):
+                                            question={}
+                                        print('content')
+                                        print(content)
+                                        print('question')
+                                        print(question)
+                                        print('question type',type(question))
+                                        
+                                        title=question.get('title','No title')
+                                        subtitle=question.get('subtitle','No subtitle')
+                                        options=question.get('options',[])
+                                        q_type=question.get('type','text')
+                                        text_response=content.get('text',None)
                                         
 
                                         with gr.Group(elem_classes=['message','assistant-message']) as question_block:
-                                            if response:
-                                                gr.Text(value=response,label='AI Response',text_align='right')
-                                            gr.Text(value=title,label='AI Response',text_align='right',autoscroll=is_last_message,autofocus=is_last_message)
-                                            # gr.Markdown(f'# {title}')
-                                            gr.Text(value=subtitle,show_label=False,text_align='right',container=False)
+                                            if text_response:
+                                                gr.Text(value=text_response,label='AI Response',)
+                                            
+                                            if question:
+                                                gr.Text(value=title,label='AI Response',text_align='right')
+                                                # gr.Markdown(f'# {title}')
+                                                gr.Text(value=subtitle,show_label=False,text_align='right',container=False)
                                             
 
                                             
                                             
-                                            def submit_options(options):
-                                                options_str=''
-                                                if isinstance(options,list):
-                                                    options_str=','.join(options)
-                                                else:
-                                                    options_str=options
-                                                return {chat_input:{'text':options_str}}
+                                                def submit_options(options):
+                                                    options_str=''
+                                                    if isinstance(options,list):
+                                                        options_str=','.join(options)
+                                                    else:
+                                                        options_str=options
+                                                    return {chat_input:{'text':options_str}}
 
                                                 
                                             
-                                            if q_type=='single_select':
-                                                single_select=gr.Radio(options,label='Select One')  
-                                                single_select.change(
-                                                    fn=submit_options,
-                                                    inputs=[single_select],
-                                                    outputs={chat_input}
-                                                )
+                                                if q_type=='single_select':
+                                                    single_select=gr.Radio(options,label='Select One')  
+                                                    single_select.change(
+                                                        fn=submit_options,
+                                                        inputs=[single_select],
+                                                        outputs={chat_input}
+                                                    )
 
-                                            elif q_type=='multi_select':
-                                                checkbox_group=gr.CheckboxGroup(options,label='options')    
-                                                checkbox_group.change(
-                                                    fn=submit_options,
-                                                    inputs=[checkbox_group],
-                                                    outputs={chat_input}
-                                                )
-                                            
-                                           
+                                                elif q_type=='multi_select':
+                                                    checkbox_group=gr.CheckboxGroup(options,label='options')    
+                                                    checkbox_group.change(
+                                                        fn=submit_options,
+                                                        inputs=[checkbox_group],
+                                                        outputs={chat_input}
+                                                    )
                                     else:
                                         gr.Text(value=message.content,label='Json parse error')
                             else:
@@ -283,20 +304,46 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                             markdown_parts.append(f'\n&emsp;{row["title"]}: {row["value"]}')
                         markdown_parts.append("")  # spacing between groups
                     return gr.Markdown('\n'.join(markdown_parts))
+            
+            with gr.Tab('Technical') as technical_tab:
+                @gr.render(inputs=[technical_requirements])
+                def render_technical_requirements(technical_requirements):
+                    if not technical_requirements:
+                        return gr.Markdown('Technical requirements yet to be generated')
+
+                    df = pd.DataFrame(technical_requirements)
+                    markdown_parts = []
+
+                    for group, gdf in df.groupby('group'):
+                        markdown_parts.append(f"## {group}")
+                        # Build markdown table
+                        table_header = "| Component | Resource Type / Service | Recommended Sizing / Type | Quantity / Notes |"
+                        table_sep = "|-----------|--------------------------|----------------------------|------------------|"
+                        table_rows = [
+                            f"| {row['component']} | {row['resource_type_or_service']} | {row['recommended_sizing_or_type']} | {row['quantity_or_notes']} |"
+                            for _, row in gdf.iterrows()
+                        ]
+                        markdown_parts.append(table_header)
+                        markdown_parts.append(table_sep)
+                        markdown_parts.extend(table_rows)
+                        markdown_parts.append("")  # spacing after table
+
+                    return gr.Markdown("\n".join(markdown_parts))
+
 
 
         def handle_input(inputs):
 
-            # for file_path in inputs[chat_input]['files']:
-            #     filename = os.path.basename(file_path)
-            #     dest_path = os.path.join(UPLOAD_DIR, filename)
+            for file_path in inputs[chat_input]['files']:
+                filename = os.path.basename(file_path)
+                file_absolute_path = os.path.abspath(os.path.join(UPLOAD_DIR, filename))
                 
-                # if not os.path.exists(dest_path):
-                #     os.rename(file_path, dest_path)
+                if not os.path.exists(file_absolute_path):
+                    os.rename(file_path, file_absolute_path)
 
-                # if dest_path not in inputs[uploaded_file_names]:
-                #     inputs[uploaded_file_names].append(dest_path)
-                #     yield  {uploaded_file_names:inputs[uploaded_file_names]}
+                if file_absolute_path not in inputs[uploaded_file_names]:
+                    inputs[uploaded_file_names].append(file_absolute_path)
+                    yield  {uploaded_file_names:inputs[uploaded_file_names]}
             
             text_input=inputs[chat_input].get('text',None)
 
@@ -327,6 +374,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                 collected_data:response['collected_data'],
                 thoughts:response['thoughts'],
                 solution:response['solution'],
+                technical_requirements:response['technical_requirements'],
                 chat_history:response['messages_history']
             }
 
@@ -400,6 +448,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                     thoughts,
                     collected_data,
                     solution,
+                    technical_requirements,
                     },
                 outputs={
                     chat_history,
@@ -408,6 +457,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                     thoughts,
                     collected_data,
                     solution,
+                    technical_requirements,
                     }
         )
         
@@ -443,8 +493,14 @@ with gr.Blocks(fill_height=True,css=css) as demo:
         
         
 
-    @reset_thread.click(outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,chat_input})
-    def reset_app():
+    @reset_thread.click(
+        inputs={thread_id},
+        outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,chat_input})
+    def reset_app(inputs):
+
+        # # Reset the previous thread and shift to new theread id
+        current_thread_id=inputs[thread_id]
+        costix_graph.initialize_thread(thread_id=current_thread_id)
 
         new_thread_id=create_new_thread()
         return {
