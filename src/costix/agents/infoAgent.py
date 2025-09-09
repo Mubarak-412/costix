@@ -79,7 +79,8 @@ promptTemplate=ChatPromptTemplate.from_messages(
 )
 
 info_agent_tools=[
-    ask_question_tool,
+    web_search_tool,
+    conversation_tool,
     update_current_phase_tool,
     add_to_collected_data_tool,
     remove_from_collected_data_tool,
