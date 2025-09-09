@@ -2,6 +2,8 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+RUN mkdir uploads
+RUN chmod 777 uploads
 
 
 COPY src/ ./src/
