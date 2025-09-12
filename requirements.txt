@@ -6,10 +6,11 @@ python-dotenv
 jupyter_client
 pyzmq
 ipykernel
+-e .
+
 
 #optional
 gradio
-
 
 # python runtime dependencies for agent 
 openpyxl

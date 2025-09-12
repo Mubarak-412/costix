@@ -7,7 +7,6 @@ import pandas as pd
 from costix.graph import CostixGraph
 from langgraph.checkpoint.memory import MemorySaver
 
-from gradio_ui.gradioComponents import create_question_component
 
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
@@ -178,11 +177,6 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                                         question=content.get('question')
                                         if(not question):
                                             question={}
-                                        print('content')
-                                        print(content)
-                                        print('question')
-                                        print(question)
-                                        print('question type',type(question))
                                         
                                         title=question.get('title','No title')
                                         subtitle=question.get('subtitle','No subtitle')
@@ -364,7 +358,6 @@ with gr.Blocks(fill_height=True,css=css) as demo:
 
 
             response=costix_graph.invoke(state,config)
-            print(response)
 
             
 
