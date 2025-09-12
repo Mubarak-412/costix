@@ -6,7 +6,14 @@ from langchain_core.tools import InjectedToolCallId
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 
+from costix.chains import get_evaluator_chain
+from costix.model import get_model
 from costix.schemas import CostixPhase,CostixPhaseToNodeMap
+
+
+AI_MODEL=get_model()
+EVALUATOR_CHAIN=get_evaluator_chain(AI_MODEL)
+
 def update_current_phase(
     phase: CostixPhase,
     tool_call_id: Annotated[str, InjectedToolCallId], 
@@ -23,12 +30,24 @@ def update_current_phase(
     
     if not next_node:
         return f"Phase {phase} is not a valid phase."
+
+    current_agent_messages=agent_state['messages']
+    evaluator_messages=current_agent_messages[:-1]                 # removing the current toolcall ai message to avoid error
+    evaluator_response=EVALUATOR_CHAIN.invoke(
+        {**agent_state,'messages':evaluator_messages,'destination_phase':phase}
+    )
+    evaluation_response=evaluator_response
     
+    if evaluation_response.result!='ACCEPT':
+        reject_message=f"Transition to {phase} was rejected. Feedback: {evaluation_response.feedback}"
+        print(evaluation_response,reject_message)
+        return reject_message
+
     thought=f'Moving to {phase} Phase'
     tool_message=ToolMessage(content=f"Updated current phase to {phase}",tool_call_id=tool_call_id)
 
 
-    # this update sends the current state of the agent to the next agent ( different a agent updating its state)
+    # this update sends the current state of the agent to the next agent ( different than a agent updating its state)
     current_agent_messages=agent_state['messages']
     updates_to_apply={
         'current_phase':phase,
