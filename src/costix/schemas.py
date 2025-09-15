@@ -29,12 +29,13 @@ class CostixNodes(StrEnum):
     INFO_AGENT='info_agent'
     SOLUTION_AGENT='solution_agent'
     TECHNICAL_AGENT='technical_agent'
-    ESTIMATION_AGENT='estimation_agent'
+    ESTIMATE_AGENT='estimate_agent'
 
 CostixPhaseToNodeMap={
     CostixPhase.INFORMATION_GATHERING:CostixNodes.INFO_AGENT,
     CostixPhase.SOLUTION_GENERATION:CostixNodes.SOLUTION_AGENT,
     CostixPhase.TECHNICAL:CostixNodes.TECHNICAL_AGENT,
+    CostixPhase.ESTIMATION:CostixNodes.ESTIMATE_AGENT
 }
 
 
@@ -85,6 +86,7 @@ class CostixState(TypedDict):
     collected_data:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     solution:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     technical_requirements:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
+    estimate:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     uploaded_files:list[str]=[]                                 # stores the list of files(names) uploaded by the user
 
 

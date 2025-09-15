@@ -9,7 +9,8 @@ from costix.schemas import (
 from costix.agents import (
     get_info_agent,
     get_solution_agent,
-    get_technical_agent
+    get_technical_agent,
+    get_estimate_agent
 )
 from costix.model import get_model 
 from costix.tools import get_jupyter_repl_tool
@@ -32,7 +33,8 @@ def create_agent_node(agent:any):
 ALL_AGENT_NODES=[
     CostixNodes.INFO_AGENT,
     CostixNodes.SOLUTION_AGENT,
-    CostixNodes.TECHNICAL_AGENT
+    CostixNodes.TECHNICAL_AGENT,
+    CostixNodes.ESTIMATE_AGENT,
     ]
 
 
@@ -48,10 +50,13 @@ class CostixGraph:
         self.info_agent=get_info_agent(model,additional_tools=[self.python_tool])
         self.solution_agent=get_solution_agent(model,additional_tools=[self.python_tool])
         self.technical_agent=get_technical_agent(model,additional_tools=[self.python_tool])
+        self.estimate_agent=get_estimate_agent(model,additional_tools=[self.python_tool])
 
         graph.add_node(CostixNodes.INFO_AGENT,self.info_agent)
         graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent)
         graph.add_node(CostixNodes.TECHNICAL_AGENT,self.technical_agent)
+        graph.add_node(CostixNodes.ESTIMATE_AGENT,self.estimate_agent)
+
         graph.add_conditional_edges(START, lambda state:state['current_phase'],CostixPhaseToNodeMap)
         graph.add_edge(ALL_AGENT_NODES,END)
         self.graph=graph.compile(checkpointer=checkpointer)
@@ -67,6 +72,7 @@ class CostixGraph:
             'solution':[],
             'technical_requirements':[],
             'uploaded_files':[],
+            'estimate':[],
             }
         if state:
             initial_state.update(state)

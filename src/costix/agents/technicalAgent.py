@@ -117,7 +117,7 @@ technical_agent_tools=[
 ]
 
 def get_technical_agent(model:BaseChatModel,additional_tools:list|None=None):
-    ''' creates a instnce of technical agent
+    ''' creates a instance of technical agent
     
     agrs:
         model: BaseChatModel

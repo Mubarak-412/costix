@@ -5,3 +5,4 @@ from costix.tools.jupyterREPL import get_jupyter_repl_tool
 from costix.tools.solution import add_to_solution_tool,remove_from_solution_tool
 from costix.tools.technical import add_to_technical_requirements_tool,remove_from_technical_requirements_tool
 from costix.tools.webSearch import web_search_tool
+from costix.tools.estimate import add_to_estimate_tool,remove_from_estimate_tool

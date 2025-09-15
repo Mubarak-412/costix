@@ -105,7 +105,7 @@ solution_agent_tools=[
 ]
 
 def get_solution_agent(model:BaseChatModel,additional_tools:list|None=None):
-    ''' creates a instnce of solution agent
+    ''' creates a instance of solution agent
     
     agrs:
         model: BaseChatModel
