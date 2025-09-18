@@ -34,7 +34,7 @@ def add_to_technical_requirements(
     updated_technical_requirements=None
     
     response_tool_message=''
-    thought=None
+    thought_text=None
     for item in technical_requirements:
         if item['group']==data_point.group and item['component']==data_point.component:
             item['resource_type_or_service']=data_point.resource_type_or_service
@@ -42,13 +42,14 @@ def add_to_technical_requirements(
             item['quantity_or_notes']=data_point.quantity_or_notes
             updated_technical_requirements=technical_requirements
             response_tool_message=f"Updated existing data point with group {data_point.group} and component {data_point.component}"
-            thought=f"Updating Technical Requirements for {data_point.component}"
+            thought_text=f"Updating Technical Requirements for {data_point.component}"
             break
     if not updated_technical_requirements:
         updated_technical_requirements=data_point.model_dump()
         response_tool_message=f"Added data point with group {data_point.group} and component {data_point.component}"
-        thought=f"Updating Technical Requirements for {data_point.component}"
+        thought_text=f"Updating Technical Requirements for {data_point.component}"
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
+    thought={'type':'text','text':thought_text}
     return Command(update={'technical_requirements':updated_technical_requirements,'messages':[tool_message],'thoughts':thought})
 
 add_to_technical_requirements_tool=StructuredTool.from_function(
@@ -82,7 +83,7 @@ def remove_from_technical_requirements(
     else:
         tool_response_message=f"Removed data point with group {group} and component {component}"
         tool_message=ToolMessage(content=tool_response_message,tool_call_id=tool_call_id)
-        thought=f"Removing {component} from technical requirements"
+        thought={'type':'text','text':f"Removing {component} from technical requirements"}
         return Command(update={'technical_requirements':technical_requirements,'messages':[tool_message],'thoughts':thought})
 
 

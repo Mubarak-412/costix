@@ -43,7 +43,7 @@ def update_current_phase(
         print(evaluation_response,reject_message)
         return reject_message
 
-    thought=f'Moving to {phase} Phase'
+    thought={'type':'text','text':f'Moving to {phase} Phase'}
     tool_message=ToolMessage(content=f"Updated current phase to {phase}",tool_call_id=tool_call_id)
 
 

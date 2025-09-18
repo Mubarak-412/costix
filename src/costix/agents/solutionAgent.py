@@ -9,9 +9,6 @@ from costix.tools import (
     web_search_tool,
     conversation_tool,
     update_current_phase_tool,
-
-    add_to_collected_data_tool,
-    remove_from_collected_data_tool,
     
     add_to_solution_tool,
     remove_from_solution_tool,
@@ -36,6 +33,7 @@ The solution must include all the necessary resources and services to be used an
     *   Use the `conversation_tool` *exclusively* for all communication with the user.
         - This includes asking questions, answering queries, and seeking confirmation. 
         - The response to the user should be placed in the response field of the `conversation_tool`.
+        - Use the 'display_table' tool to display tables to the user.
     *   Ask questions to clarify requirements and build a detailed solution summary by adding, updating, and removing information.
 
 3. **User input verification:**
@@ -99,9 +97,6 @@ solution_agent_tools=[
     
     add_to_solution_tool,
     remove_from_solution_tool,
-    
-    add_to_collected_data_tool,
-    remove_from_collected_data_tool,
 ]
 
 def get_solution_agent(model:BaseChatModel,additional_tools:list|None=None):

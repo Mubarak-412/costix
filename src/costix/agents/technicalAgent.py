@@ -9,11 +9,7 @@ from costix.tools import (
     conversation_tool,
     update_current_phase_tool,
     
-    add_to_collected_data_tool,
-    remove_from_collected_data_tool,
-    
-    add_to_solution_tool,
-    remove_from_solution_tool,
+
 
     add_to_technical_requirements_tool,
     remove_from_technical_requirements_tool,
@@ -39,10 +35,11 @@ Process:
     Begin by defining high-level components.
     Elaborate on detailed components, actively soliciting clarification from the user as needed to ensure complete and accurate specifications.
 
-**Communication:**
+**User Interaction:**
     *   Use the `conversation_tool` *exclusively* for all communication with the user.
         - This includes asking questions, answering queries, and seeking confirmation. 
         - The response to the user should be placed in the response field of the `conversation_tool`.
+         - Use the 'display_table' tool to display tables to the user.
     *   Ask questions to clarify requirements and build a detailed technical requirements specification.
 
 **User input verification:**
@@ -67,7 +64,6 @@ Core Responsibilities:
     - Collect and validate project requirements from the user.
     - During this phase, focus solely on cloud technical requirements. Avoid engaging in cost estimation, or any other tasks beyond cloud infrastructure solutioning.
     - If the user asks about cost estimation, explain that we are currently in the solution generation phase. These tasks will be addressed in subsequent phases once the technical requirements are generated and user is satisfied.
-
 
 
 **Phase Transitions:** 
@@ -105,12 +101,6 @@ technical_agent_tools=[
     web_search_tool,
     conversation_tool,
     update_current_phase_tool,
-
-    add_to_collected_data_tool,
-    remove_from_collected_data_tool,
-
-    add_to_solution_tool,
-    remove_from_solution_tool,
     
     add_to_technical_requirements_tool,
     remove_from_technical_requirements_tool,

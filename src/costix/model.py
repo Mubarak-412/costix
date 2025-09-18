@@ -13,8 +13,16 @@ GPT_5='gpt-5'
 OPENAI_MODEL=GPT_4_1
 USE_RESPONSE_API=True
 
-def get_model(model_name:str=OPENAI_MODEL)->BaseChatModel:
+DEFAULT_TEMPERATURE=0.7
+
+def get_model(model_name:str=OPENAI_MODEL,*args,**kwargs)->BaseChatModel:
     '''
     returns the language model to be used by the agent
     '''
-    return ChatOpenAI(model_name=model_name,use_responses_api=USE_RESPONSE_API)
+    
+    
+    if not 'temperature' in kwargs:
+        kwargs['temperature']=DEFAULT_TEMPERATURE
+    
+    
+    return ChatOpenAI(model_name=model_name,use_responses_api=USE_RESPONSE_API,*args,**kwargs)

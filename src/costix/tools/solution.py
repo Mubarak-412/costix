@@ -25,19 +25,20 @@ def add_to_solution(
     updated_solution=None
     
     response_tool_message=''
-    thought=None
+    thought_text=None
     for item in solution:
         if item['group']==data_point.group and item['title']==data_point.title:
             item['value']=data_point.value
             updated_solution=solution
             response_tool_message=f"Updated existing data point with group {data_point.group} and title {data_point.title}"
-            thought=f"Updating Solution for {data_point.title}"
+            thought_text=f"Updating Solution for {data_point.title}"
             break
     if not updated_solution:
         updated_solution=data_point.model_dump()
         response_tool_message=f"Added data point with group {data_point.group} and title {data_point.title}"
-        thought=f"Updating Solution for {data_point.title}"
+        thought_text=f"Updating Solution for {data_point.title}"
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
+    thought={'type':'text','text':thought_text}
     return Command(update={'solution':updated_solution,'messages':[tool_message],'thoughts':thought})
 
 add_to_solution_tool=StructuredTool.from_function(

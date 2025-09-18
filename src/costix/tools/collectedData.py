@@ -26,7 +26,7 @@ def add_to_collected_data(
     """
     response_tool_message=''
     new_collected_data=None
-    thought=None
+    thought_text=None
     if not collected_data:
         collected_data=[]
 
@@ -35,14 +35,15 @@ def add_to_collected_data(
             datapoint['value']=data.value
             response_tool_message=f"Updated data point with title {data.title}"
             new_collected_data=collected_data
-            thought=f"Updating Requirements for {data.title}"
+            thought_text=f"Updating Requirements for {data.title}"
             break
     else:
         new_collected_data=data.model_dump()
         response_tool_message=f"Added data point with title {data.title}"
-        thought=f"Adding Requirements for {data.title}"
+        thought_text=f"Adding Requirements for {data.title}"
    
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
+    thought={'type':'text','text':thought_text}
     updates={'collected_data':new_collected_data,'messages':[tool_message],'thoughts':thought}
     return Command(update=updates)
       
@@ -86,7 +87,8 @@ def remove_from_collected_data(
         response_tool_message=f'Removed data point with title {title} from collected data.'
     print(response_tool_message)
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
-    return Command(update={'collected_data':collected_data,'messages':[tool_message]})
+    thought={'type':'text','text':f"Removing Requirements for {title}"}
+    return Command(update={'collected_data':collected_data,'messages':[tool_message],'thoughts':thought})
 
 
 remove_from_collected_data_tool = StructuredTool.from_function(

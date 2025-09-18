@@ -132,6 +132,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
     thoughts=gr.State([])
     solution=gr.State([])
     technical_requirements=gr.State([])
+    estimate=gr.State([])
 
     # downloadable_file_names=gr.State([])
 
@@ -247,7 +248,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                
 
 
-        with gr.Column(scale=4) as rightSideBar:
+        with gr.Column(scale=5) as rightSideBar:
 
             with gr.Tab('Thought Process') as thoughts_tab:
                 
@@ -255,23 +256,36 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                 def render_thoughts(thoughts):
                     if not thoughts:
                         return 
-                    with gr.Group():
+                    with gr.Group(elem_id='thoughts_group'):
                         for thought in thoughts:
-                            gr.Radio([thought],value=thought,show_label=False)
+                            thought_type=thought.get('type',None)
+                            if not thought_type:
+                                continue
+                            if(thought_type=='text'):
+                                thought_text=thought.get('text','No Text')
+                                gr.Radio([thought_text],value=thought_text,show_label=False)
+                            elif(thought_type=='table'):
+                                title=thought.get('title','No Title')
+                                table_data=thought.get('data',[])
+                                thought_table=pd.DataFrame(table_data)
+                                with gr.Group():
+                                    gr.Textbox(value=title,container=False)
+                                    gr.DataFrame(value=thought_table)
+
 
             with gr.Tab('Collected Data') as collected_data_tab:
                 @gr.render(inputs=[collected_data])
                 def format_collected_data(collected_data):
 
                     if not collected_data:
-                        return gr.Markdown('No data collected')
+                        return gr.Markdown('No data collected',elem_id='collected_data')
 
                     # Convert list[dict] → DataFrame
                     df = pd.DataFrame(collected_data)
 
                     # Ensure required columns exist
                     if not {"group", "title", "value"}.issubset(df.columns):
-                        return gr.Markdown('No data collected')
+                        return gr.Markdown('No data collected',elem_id='collected_data')
 
                     # Group by 'group'
                     markdown_parts = []
@@ -280,15 +294,15 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                         for _, row in gdf.iterrows():
                             markdown_parts.append(f"\n&emsp;{row['title']}: {row['value']}")
                         markdown_parts.append("")  # spacing between groups
-
-                    return gr.Markdown("\n".join(markdown_parts))
+                    return gr.Markdown("\n".join(markdown_parts),elem_id='collected_data')
 
             with gr.Tab('Solution') as solution_tab:
                 @gr.render(inputs=[solution])
                 def render_solution(solution):
 
-                    if not solution:
-                        return gr.Markdown('Solution yet to be generated')
+                    if not solution: 
+                        gr.Markdown('Solution yet to be generated',elem_id='solution')
+                        return
                     df=pd.DataFrame(solution)
                     markdown_parts=[]
                     for group,gdf in df.groupby('group'):
@@ -296,13 +310,13 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                         for _,row in gdf.iterrows():
                             markdown_parts.append(f'\n&emsp;{row["title"]}: {row["value"]}')
                         markdown_parts.append("")  # spacing between groups
-                    return gr.Markdown('\n'.join(markdown_parts))
+                    gr.Markdown('\n'.join(markdown_parts),elem_id='solution')
             
             with gr.Tab('Technical') as technical_tab:
                 @gr.render(inputs=[technical_requirements])
                 def render_technical_requirements(technical_requirements):
                     if not technical_requirements:
-                        return gr.Markdown('Technical requirements yet to be generated')
+                        return gr.Markdown('Technical requirements yet to be generated',elem_id='technical_requirements')
 
                     df = pd.DataFrame(technical_requirements)
                     markdown_parts = []
@@ -321,8 +335,30 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                         markdown_parts.extend(table_rows)
                         markdown_parts.append("")  # spacing after table
 
-                    return gr.Markdown("\n".join(markdown_parts))
+                    return gr.Markdown("\n".join(markdown_parts),elem_id='technical_requirements')
 
+            with gr.Tab('Estimate') as estimate_tab:
+                @gr.render(inputs=[estimate])
+                def render_estimate(estimate):
+                    if not estimate: 
+                        gr.Markdown('Estimate yet to be generated',elem_id='estimate')
+                        return
+                    df=pd.DataFrame(estimate)
+                    markdown_parts=[]
+                     # keep insertion order of groups (no sort),
+                    for group, gdf in df.groupby("group", sort=False):
+                      
+                        markdown_parts.append(f"### {group}")
+                        markdown_parts.append("| Component | Subtitle | Rate | Monthly Estimate | Notes |")
+                        markdown_parts.append("|---|---|---|---:|---|")
+
+                        for _, r in gdf.iterrows():
+                            notes='<br>'.join(r['notes'])
+                            markdown_parts.append(
+                                f"| {r['component']} | {r['subtitle']} | {r['rate']} | {r['monthly_estimate']:.2f} | {notes} |"
+                            )
+
+                    gr.Markdown('\n'.join(markdown_parts),elem_id='estimate')
 
 
         def handle_input(inputs):
@@ -367,6 +403,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                 thoughts:response['thoughts'],
                 solution:response['solution'],
                 technical_requirements:response['technical_requirements'],
+                estimate:response['estimate'],
                 chat_history:response['messages_history']
             }
 
@@ -441,6 +478,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                     collected_data,
                     solution,
                     technical_requirements,
+                    estimate,
                     },
                 outputs={
                     chat_history,
@@ -450,6 +488,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                     collected_data,
                     solution,
                     technical_requirements,
+                    estimate,
                     }
         )
         
@@ -487,7 +526,7 @@ with gr.Blocks(fill_height=True,css=css) as demo:
 
     @reset_thread.click(
         inputs={thread_id},
-        outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,chat_input})
+        outputs={thread_id,uploaded_file_names,chat_history,thoughts,solution,collected_data,technical_requirements,estimate,chat_input})
     def reset_app(inputs):
 
         # # Reset the previous thread and shift to new theread id
@@ -502,6 +541,8 @@ with gr.Blocks(fill_height=True,css=css) as demo:
             thoughts:[],
             solution:[],
             collected_data:[],
+            technical_requirements:[],
+            estimate:[],
             chat_input:None
         }
 

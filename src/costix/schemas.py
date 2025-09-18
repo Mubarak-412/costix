@@ -55,20 +55,7 @@ def make_add_or_update_reducer(type_: type[T]) -> Callable[[list[T], Union[list[
             # raise (f"Expected {type_.__name__}, got {type(new_data).__name__}")
     return add_or_update_reducer
 
-def thoughts_reducer(prev_thoughts,new_thoughts:list[str]|str):
-    '''
-    Reducer function for the thoughts field in the CostixState.
-        if new value is a single str then append it to the list
-        if new value is a list then replace the old list with the new one
-    '''
-    if isinstance(new_thoughts,str):
-        prev_thoughts.append(new_thoughts)
-        return prev_thoughts
-    elif isinstance(new_thoughts,list):
-        return new_thoughts
-    else:
-        print('new_thoughts is of unknown type',type(new_thoughts),new_thoughts)
-        return prev_thoughts
+
 
 
 def replace_reducer(prev,new):
@@ -82,7 +69,7 @@ class CostixState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
     messages_history: Annotated[Sequence[BaseMessage], add_messages]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING
-    thoughts:Annotated[list[str],make_add_or_update_reducer(str)]=[]
+    thoughts:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     collected_data:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     solution:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
     technical_requirements:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]

@@ -1,8 +1,10 @@
+import json
+from click import command
 import jupyter_client
 import queue
 import atexit
 from typing import Annotated, Dict
-
+import textwrap
 # Using modern Pydantic import
 from langchain_core.messages import ToolMessage
 from langgraph.prebuilt import InjectedState
@@ -118,11 +120,14 @@ class JupyterKernelREPL:
         if error_output:
             return f"--- STDERR ---\n{error_output.strip()}\n"
         if output:
-            return f"--- STDOUT ---\n{output.strip()}\n"
+            return f"{output.strip()}"
 
         return "Command executed with no output. use print() to display output."
 
 # --- Tool Factory Function ---
+
+
+python_runtime=None
 
 class PythonREPLInput(BaseModel):
     command: str = Field(description="The Python code to execute in the persistent session.")
@@ -136,18 +141,21 @@ def get_jupyter_repl_tool() -> BaseTool:
     The JupyterKernelREPL instance is managed within the closure of this function,
     and its session is handled automatically.
     """
-    repl_session = JupyterKernelREPL()
+    global python_runtime
+    if not python_runtime:
+        python_runtime = JupyterKernelREPL()
 
     # The run function is now simpler, just passing the command.
     def _run_jupyter_repl(command, thought,tool_call_id) -> str:
-        execution_result=repl_session.run_command(command)
+        execution_result=python_runtime.run_command(command)
         tool_message=ToolMessage(content=execution_result,tool_call_id=tool_call_id)
-        updates={'messages':[tool_message],'thoughts':thought}
+        thought_to_display={'type':'text','text':thought}
+        updates={'messages':[tool_message],'thoughts':thought_to_display}
         return Command(update=updates)
 
     tool = StructuredTool.from_function(
         func=_run_jupyter_repl,
-        name="Python_REPL",
+        name="python_REPL",
         description='''
         A persistent Python REPL powered by a Jupyter Kernel. The session starts and stops automatically. Just provide the Python code to run.
         values must be printed to stdout to be accessed by the agent.
@@ -155,6 +163,82 @@ def get_jupyter_repl_tool() -> BaseTool:
         args_schema=PythonREPLInput
     )
     return tool
+
+
+
+def get_display_table_tool() -> BaseTool:
+    """
+    Factory function that creates and returns a single, stateful Jupyter REPL tool.
+    The JupyterKernelREPL instance is managed within the closure of this function,
+    and its session is handled automatically.
+    """
+    global python_runtime
+    if not python_runtime:
+        python_runtime = JupyterKernelREPL()
+    
+    class DispalyTableInput(BaseModel):
+        variable: str = Field(description="The variable that holds the table")
+        title: str = Field(description="The title of the table")
+        tool_call_id:Annotated[str,InjectedToolCallId]
+
+    def _display_table(variable,title,tool_call_id):
+
+
+        command_to_run= textwrap.dedent(f'''
+            import pandas as pd
+            import json 
+            if isinstance({variable},pd.DataFrame):
+                try:
+                     print({variable}.to_json())
+                except Exception as e:
+                    print(json.dumps({{'error':str(e)}}))
+            else:
+                print(json.dumps({{'error':'variable is not a pandas DataFrame'}}))
+        ''')
+        print('command to run ')
+        print(command_to_run)
+        print('----------------')
+        execution_result=python_runtime.run_command(
+            command_to_run
+        )
+        print('execution result')
+        print(execution_result)
+        print('----------------')
+
+        table_data=None
+        try:
+            table_data=json.loads(execution_result)
+
+            if 'error' in table_data:
+                return table_data
+        except json.JSONDecodeError as e: 
+            return f'error: {str(e)}'
+
+
+        thought={
+            'type':'table',
+            'title':title,
+            'data':table_data}
+
+
+        tool_message=ToolMessage(content='table displayed successfully',tool_call_id=tool_call_id)
+        updates={'messages':[tool_message],'thoughts':thought}
+        return Command(update=updates)
+
+    tool = StructuredTool.from_function(
+        func=_display_table,
+        name="display_table",
+        description='''
+        Use this tool to display a table in the ui.
+        user will be able to see the table in the ui.
+        args:
+            variable: the variable in the python runtime that holds the table (must be a pandas DataFrame)
+            title: the title of the table
+        ''',
+        args_schema=DispalyTableInput
+    )
+    return tool
+
 
 
 # # --- Example Usage ---

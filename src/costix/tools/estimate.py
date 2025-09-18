@@ -37,7 +37,7 @@ def add_to_estimate(
     updated_estimate=None
     
     response_tool_message=''
-    thought=None
+    thought_text=None
     for item in estimate:
         if item['group']==data_point.group and item['component']==data_point.component:
             item['subtitle']=data_point.subtitle
@@ -46,13 +46,14 @@ def add_to_estimate(
             item['notes']=data_point.notes
             updated_estimate=estimate
             response_tool_message=f"Updated existing data point with group {data_point.group} and component {data_point.component}"
-            thought=f"Updating Estimate for {data_point.component}"
+            thought_text=f"Updating Estimate for {data_point.component}"
             break
     if not updated_estimate:
         updated_estimate=data_point.model_dump()
         response_tool_message=f"Added data point with group {data_point.group} and component {data_point.component}"
-        thought=f"Updating Estimate for {data_point.component}"
+        thought_text=f"Updating Estimate for {data_point.component}"
     tool_message=ToolMessage(content=response_tool_message,tool_call_id=tool_call_id)
+    thought={'type':'text','text':thought_text}
     return Command(update={'estimate':updated_estimate,'messages':[tool_message],'thoughts':thought})
 
 add_to_estimate_tool=StructuredTool.from_function(
@@ -86,7 +87,7 @@ def remove_from_estimate(
     else:
         tool_response_message=f"Removed data point with group {group} and component {component}"
         tool_message=ToolMessage(content=tool_response_message,tool_call_id=tool_call_id)
-        thought=f"Removing {component} from estimate"
+        thought={'type':'text','text':f"Removing {component} from estimate"}
         return Command(update={'estimate':estimate,'messages':[tool_message],'thoughts':thought})
 
 

@@ -13,7 +13,7 @@ from costix.agents import (
     get_estimate_agent
 )
 from costix.model import get_model 
-from costix.tools import get_jupyter_repl_tool
+from costix.tools import get_jupyter_repl_tool,get_display_table_tool
     
 def create_agent_node(agent:any):
     'creates a graph node from Agent, allows customizing the updates made by agent'
@@ -46,11 +46,15 @@ class CostixGraph:
     def __init__(self,checkpointer:any=None):
         model=get_model()
         graph=StateGraph(CostixState)
+        
         self.python_tool=get_jupyter_repl_tool()
-        self.info_agent=get_info_agent(model,additional_tools=[self.python_tool])
-        self.solution_agent=get_solution_agent(model,additional_tools=[self.python_tool])
-        self.technical_agent=get_technical_agent(model,additional_tools=[self.python_tool])
-        self.estimate_agent=get_estimate_agent(model,additional_tools=[self.python_tool])
+        self.display_table_tool=get_display_table_tool()
+        self.additional_tools=[self.python_tool,self.display_table_tool]
+        
+        self.info_agent=get_info_agent(model,additional_tools=self.additional_tools)
+        self.solution_agent=get_solution_agent(model,additional_tools=self.additional_tools)
+        self.technical_agent=get_technical_agent(model,additional_tools=self.additional_tools)
+        self.estimate_agent=get_estimate_agent(model,additional_tools=self.additional_tools)
 
         graph.add_node(CostixNodes.INFO_AGENT,self.info_agent)
         graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent)

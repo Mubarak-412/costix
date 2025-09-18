@@ -1,8 +1,13 @@
-from costix.tools.collectedData import add_to_collected_data_tool,remove_from_collected_data_tool
-from costix.tools.phaseTransition import update_current_phase_tool
-from costix.tools.conversation import conversation_tool
-from costix.tools.jupyterREPL import get_jupyter_repl_tool
-from costix.tools.solution import add_to_solution_tool,remove_from_solution_tool
-from costix.tools.technical import add_to_technical_requirements_tool,remove_from_technical_requirements_tool
 from costix.tools.webSearch import web_search_tool
+from costix.tools.conversation import conversation_tool
+from costix.tools.phaseTransition import update_current_phase_tool
+
+from costix.tools.collectedData import add_to_collected_data_tool,remove_from_collected_data_tool
+
+from costix.tools.solution import add_to_solution_tool,remove_from_solution_tool
+
+from costix.tools.technical import add_to_technical_requirements_tool,remove_from_technical_requirements_tool
+
 from costix.tools.estimate import add_to_estimate_tool,remove_from_estimate_tool
+
+from costix.tools.jupyterREPL import get_jupyter_repl_tool,get_display_table_tool
