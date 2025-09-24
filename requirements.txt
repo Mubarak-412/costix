@@ -5,6 +5,13 @@ pydantic
 python-dotenv
 jupyter_client
 pyzmq
+
+snowflake-connector-python  
+
+# vector store
+langchain_chroma
+
+# python runtime 
 ipykernel
 -e .
 

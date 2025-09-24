@@ -384,7 +384,10 @@ with gr.Blocks(fill_height=True,css=css) as demo:
                 yield {chat_history:inputs[chat_history],chat_input:None}                # return 
 
 
-            config={'configurable':{'thread_id':inputs[thread_id]}}
+            config={
+                'configurable':{'thread_id':inputs[thread_id]},
+                'recursion_limit':100
+                }
             messages=[HumanMessage(text_input)]
             
             state={

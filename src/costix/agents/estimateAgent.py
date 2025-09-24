@@ -3,6 +3,7 @@ from langchain.chat_models.base import BaseChatModel
 from costix.agents.utils import create_costix_agent
 from costix.schemas import CostixAgentState
 
+from costix.agents.rateSheetAgent import get_rate_sheet_agent_as_tool
 
 from costix.tools import (
     web_search_tool,
@@ -124,7 +125,9 @@ def get_estimate_agent(model:BaseChatModel,additional_tools:list|None=None):
         additional_tools: list[BaseTool]
             additional tools to be used by the agent
      '''
-    tools=estimate_agent_tools+additional_tools if additional_tools else estimate_agent_tools
+    default_tools=estimate_agent_tools+[get_rate_sheet_agent_as_tool(model)]
+
+    tools=default_tools+additional_tools if additional_tools else default_tools
     agent= create_costix_agent(
         model=model,
         tools=tools,

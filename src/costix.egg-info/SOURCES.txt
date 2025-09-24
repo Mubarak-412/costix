@@ -8,6 +8,3 @@ src/costix.egg-info/SOURCES.txt
 src/costix.egg-info/dependency_links.txt
 src/costix.egg-info/top_level.txt
 src/gradio_ui/app.py
-src/gradio_ui/gradioComponents.py
-src/gradio_ui/gradioTest.py
-src/gradio_ui/testing.py

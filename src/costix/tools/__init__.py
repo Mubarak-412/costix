@@ -11,3 +11,7 @@ from costix.tools.technical import add_to_technical_requirements_tool,remove_fro
 from costix.tools.estimate import add_to_estimate_tool,remove_from_estimate_tool
 
 from costix.tools.jupyterREPL import get_jupyter_repl_tool,get_display_table_tool
+
+from costix.tools.rateSheetKnowledge import get_rate_sheet_vector_store_tool
+
+from costix.tools.sql import execute_sql_query_tool

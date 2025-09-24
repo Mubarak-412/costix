@@ -12,7 +12,7 @@ from costix.agents import (
     get_technical_agent,
     get_estimate_agent
 )
-from costix.model import get_model 
+from costix.model import get_model,get_resoning_model
 from costix.tools import get_jupyter_repl_tool,get_display_table_tool
     
 def create_agent_node(agent:any):
@@ -44,7 +44,7 @@ class CostixGraph:
     '''
 
     def __init__(self,checkpointer:any=None):
-        model=get_model()
+        model=get_resoning_model()
         graph=StateGraph(CostixState)
         
         self.python_tool=get_jupyter_repl_tool()
