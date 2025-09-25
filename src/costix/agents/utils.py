@@ -1,9 +1,16 @@
 
+from typing import Optional
 from langchain.tools import tool
+from langchain_core.messages import AIMessage
 from langchain_core.prompts import prompt
-from pydantic import BaseModel
+from langgraph.graph import END
+from pydantic import BaseModel, Field
 from costix.schemas import CostixAgentState
-from langgraph.prebuilt import create_react_agent
+from langgraph.prebuilt import create_react_agent, tools_condition
+from costix.schemas import AgentOutputSchema
+
+
+
 
 def create_costix_agent(model:BaseModel,tools:list[tool],prompt:prompt, *args,**kwargs):
     '''
@@ -13,13 +20,19 @@ def create_costix_agent(model:BaseModel,tools:list[tool],prompt:prompt, *args,**
     - parallel tool calls are disabled to ensure that there is only one change to state
     '''
 
-    model_with_tools=model.bind_tools(tools=tools,parallel_tool_calls=False) if tools else model
+    
     agent= create_react_agent(
-        model=model_with_tools,
+        model=model,
         prompt=prompt,
         tools=tools,
         state_schema=CostixAgentState,
+        response_format=AgentOutputSchema,
         *args,
         **kwargs
         )
     return agent
+
+
+
+
+

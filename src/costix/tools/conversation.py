@@ -37,20 +37,17 @@ def handle_conversation(
 
     response_content=json.dumps(generated_response)       
     response_message=AIMessage(response_content)
-    tool_message=ToolMessage('message successfully displayed',tool_call_id=tool_call_id)
-    messages=agent_state['messages']
-    messages_history=agent_state['messages_history']
-
+    tool_message=ToolMessage('message sent to user',tool_call_id=tool_call_id)
+        
     new_updates={
-        'messages':messages+[tool_message],
-        'messages_history':messages_history+[response_message]
+        'messages':[tool_message],
+        'messages_history':[response_message]
     }
     updates=agent_state.copy()
     updates.update(new_updates)
     return Command(
-        update=updates,
-        graph=Command.PARENT,
-        goto=END)
+        update=updates
+        )
 
 
 conversation_tool=StructuredTool.from_function(

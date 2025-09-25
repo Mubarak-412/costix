@@ -7,7 +7,6 @@ from costix.agents.rateSheetAgent import get_rate_sheet_agent_as_tool
 
 from costix.tools import (
     web_search_tool,
-    conversation_tool,
     update_current_phase_tool,
     
     add_to_estimate_tool,
@@ -108,7 +107,6 @@ promptTemplate=ChatPromptTemplate.from_messages(
 
 estimate_agent_tools=[
     web_search_tool,
-    conversation_tool,
     update_current_phase_tool,
 
     add_to_estimate_tool,

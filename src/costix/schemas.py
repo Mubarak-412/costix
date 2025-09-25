@@ -1,4 +1,4 @@
-from typing import TypeVar, Union, Callable
+from typing import Optional, TypeVar, Union, Callable
 from enum import StrEnum
 from typing import TypedDict,NotRequired,Annotated,Sequence
 from pydantic import BaseModel,Field
@@ -80,12 +80,6 @@ class CostixState(TypedDict):
 
 
 
-class CostixAgentState(CostixState):
-    '''
-    state schema for agents that have both agent state and costix state keys
-    '''
-    remaining_steps: NotRequired[RemainingSteps]   # extra key required by create_react_agent
-
 
 
 class QuestionTypes(StrEnum):
@@ -104,3 +98,22 @@ class QuestionSchema(BaseModel):
     subtitle:str=Field(...,description='The subtitle of the question')
     type:QuestionTypes=Field(...,description='The type of the question to ask the user')
     options:list[str]=Field([],description='The options for the question')
+
+
+
+class AgentOutputSchema(BaseModel):
+    '''
+    The Schema for the output of the costix agent.
+        contains the response to be send to the user and the question to be asked to the user
+    '''
+    response:Optional[str]=Field(description='The Text Response to be send to the user ( supports markdown)')
+    question:Optional[QuestionSchema]=Field(description='The Question to be asked to the user')
+
+
+
+class CostixAgentState(CostixState):
+    '''
+    state schema for agents that have both agent state and costix state keys
+    '''
+    remaining_steps: NotRequired[RemainingSteps]   # extra key required by create_react_agent
+    structured_response:NotRequired[AgentOutputSchema]

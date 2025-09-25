@@ -1,6 +1,9 @@
 
+import json
+from langchain_core.messages import AIMessage
 from langgraph.graph import StateGraph, START, END
 from costix.schemas import (
+    AgentOutputSchema,
     CostixState,
     CostixPhase,
     CostixNodes,
@@ -20,9 +23,24 @@ def create_agent_node(agent:any):
     'creates a graph node from Agent, allows customizing the updates made by agent'
 
     def node(state:CostixState):
-        response=agent.invoke(state)
-        messages=response['messages']
-        return {'messages':messages}
+        agent_graph_response=agent.invoke(state)
+        structured_response=agent_graph_response.get('structured_response',None)
+
+        updates=agent_graph_response
+        if structured_response and isinstance(structured_response,AgentOutputSchema):
+            structured_response_json=structured_response.model_dump()
+            ai_response={}
+            text_response=structured_response_json.get('response',None)
+            question_response=structured_response_json.get('question',None)
+            if text_response:
+                ai_response['text']=text_response
+            if question_response:
+                ai_response['question']=question_response
+            
+            ai_message=AIMessage(content=json.dumps(ai_response))
+            updates['messages_history'].append(ai_message)
+        
+        return updates
 
     return node
 
@@ -57,10 +75,16 @@ class CostixGraph:
         self.technical_agent=get_technical_agent(model,additional_tools=self.additional_tools)
         self.estimate_agent=get_estimate_agent(model,additional_tools=self.additional_tools)
 
-        graph.add_node(CostixNodes.INFO_AGENT,self.info_agent)
-        graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent)
-        graph.add_node(CostixNodes.TECHNICAL_AGENT,self.technical_agent)
-        graph.add_node(CostixNodes.ESTIMATE_AGENT,self.estimate_agent)
+
+        self.info_agent_node=create_agent_node(self.info_agent)
+        self.solution_agent_node=create_agent_node(self.solution_agent)
+        self.technical_agent_node=create_agent_node(self.technical_agent)
+        self.estimate_agent_node=create_agent_node(self.estimate_agent)
+
+        graph.add_node(CostixNodes.INFO_AGENT,self.info_agent_node)
+        graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent_node)
+        graph.add_node(CostixNodes.TECHNICAL_AGENT,self.technical_agent_node)
+        graph.add_node(CostixNodes.ESTIMATE_AGENT,self.estimate_agent_node)
 
         graph.add_conditional_edges(START, lambda state:state['current_phase'],CostixPhaseToNodeMap)
         graph.add_edge(ALL_AGENT_NODES,END)

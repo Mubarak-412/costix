@@ -6,11 +6,8 @@ from costix.schemas import CostixAgentState
 
 from costix.tools import (
     web_search_tool,
-    conversation_tool,
     update_current_phase_tool,
     
-
-
     add_to_technical_requirements_tool,
     remove_from_technical_requirements_tool,
     )
@@ -99,7 +96,6 @@ promptTemplate=ChatPromptTemplate.from_messages(
 
 technical_agent_tools=[
     web_search_tool,
-    conversation_tool,
     update_current_phase_tool,
     
     add_to_technical_requirements_tool,

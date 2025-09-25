@@ -1,5 +1,4 @@
 from costix.tools.webSearch import web_search_tool
-from costix.tools.conversation import conversation_tool
 from costix.tools.phaseTransition import update_current_phase_tool
 
 from costix.tools.collectedData import add_to_collected_data_tool,remove_from_collected_data_tool

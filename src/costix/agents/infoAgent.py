@@ -9,7 +9,6 @@ from costix.tools import (
     add_to_collected_data_tool,
     remove_from_collected_data_tool,
     update_current_phase_tool,
-    conversation_tool,
     web_search_tool
     )
 
@@ -122,7 +121,6 @@ promptTemplate=ChatPromptTemplate.from_messages(
 
 info_agent_tools=[
     web_search_tool,
-    conversation_tool,
     update_current_phase_tool,
     add_to_collected_data_tool,
     remove_from_collected_data_tool,
