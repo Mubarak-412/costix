@@ -14,6 +14,7 @@ from costix.agents import (
 )
 from costix.model import get_model,get_resoning_model
 from costix.tools import get_jupyter_repl_tool,get_display_table_tool
+from costix.agents.useCase import fetch_use_case_prompt
     
 def create_agent_node(agent:any):
     'creates a graph node from Agent, allows customizing the updates made by agent'
@@ -44,7 +45,7 @@ class CostixGraph:
     '''
 
     def __init__(self,checkpointer:any=None):
-        model=get_resoning_model()
+        model=get_model()
         graph=StateGraph(CostixState)
         
         self.python_tool=get_jupyter_repl_tool()
@@ -65,9 +66,18 @@ class CostixGraph:
         graph.add_edge(ALL_AGENT_NODES,END)
         self.graph=graph.compile(checkpointer=checkpointer)
 
+    def get_graph(self,*args,**kwargs):
+            return self.graph.get_graph(*args,**kwargs)
 
     def initialize_thread(self,thread_id:str,state:CostixState|None=None):
+
+        use_case_id = 'db845027-b985-42d0-8498-62f61f0a7f78'
+   
+        use_case_prompt = fetch_use_case_prompt(use_case_id=use_case_id)
+
+
         initial_state={
+            'use_case_prompt': use_case_prompt,
             'current_phase':CostixPhase.INFORMATION_GATHERING,
             'messages':[],
             'thoughts':[],
@@ -81,6 +91,7 @@ class CostixGraph:
         if state:
             initial_state.update(state)
         config={'configurable':{'thread_id':thread_id}}
+        # print( f'initializing thread {thread_id} with state {initial_state}')
         self.graph.update_state(config,initial_state)
 
 

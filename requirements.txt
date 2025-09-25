@@ -3,7 +3,6 @@ langchain
 langgraph
 pydantic
 python-dotenv
-jupyter_client
 pyzmq
 
 snowflake-connector-python  
@@ -13,6 +12,7 @@ langchain_chroma
 
 # python runtime 
 ipykernel
+jupyter_client
 -e .
 
 

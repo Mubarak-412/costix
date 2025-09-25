@@ -1,5 +1,6 @@
 pyproject.toml
 src/costix/__init__.py
+src/costix/db.py
 src/costix/graph.py
 src/costix/model.py
 src/costix/schemas.py

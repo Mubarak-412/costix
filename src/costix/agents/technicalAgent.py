@@ -36,7 +36,7 @@ Process:
     Elaborate on detailed components, actively soliciting clarification from the user as needed to ensure complete and accurate specifications.
 
 **User Interaction:**
-    *   Use the `conversation_tool` *exclusively* for all communication with the user.
+    *  Always Use the `conversation_tool` for all communication with the user.
         - This includes asking questions, answering queries, and seeking confirmation. 
         - The response to the user should be placed in the response field of the `conversation_tool`.
          - Use the 'display_table' tool to display tables to the user.

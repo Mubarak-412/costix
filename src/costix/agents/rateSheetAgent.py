@@ -1,9 +1,9 @@
-from typing import List, TypedDict
+from typing import Annotated, List, TypedDict
 from huggingface_hub import Agent
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from langchain.chat_models.base import BaseChatModel
-from langgraph.prebuilt import create_react_agent
+from langgraph.prebuilt import InjectedState, create_react_agent
 from langgraph.prebuilt.chat_agent_executor import AgentState
 
 
@@ -118,7 +118,7 @@ def get_rate_sheet_agent_as_tool(model:BaseChatModel,additional_tools:list|None=
 
     rate_sheet_agent=get_rate_sheet_agent(model)
 
-    def talk_to_rate_sheet_agent(query:str):
+    def talk_to_rate_sheet_agent(query:str,state:Annotated[dict,InjectedState]):
         '''
         communicate with the rate sheet agent and pricing information 
         Args:
@@ -127,7 +127,10 @@ def get_rate_sheet_agent_as_tool(model:BaseChatModel,additional_tools:list|None=
         '''
 
         query_message=AIMessage(content=query)
-        response=rate_sheet_agent.invoke({'messages':[query_message]})
+        
+        rate_sheet_state={'messages':[query_message],'uploaded_files':state.get('uploaded_files','')}
+
+        response=rate_sheet_agent.invoke(rate_sheet_state)
         return response['messages'][-1].content
     
     return talk_to_rate_sheet_agent

@@ -65,7 +65,8 @@ class CostixState(TypedDict):
     '''
     State schema for the COSTIX estimation process.
     '''
-    user_input: str=''                                          # >stores the user input
+    user_input: str=''
+    use_case_prompt: str=''                                       # >stores the use case prompt
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
     messages_history: Annotated[Sequence[BaseMessage], add_messages]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING

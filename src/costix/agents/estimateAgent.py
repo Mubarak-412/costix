@@ -23,8 +23,7 @@ Prioritize using discounted rates from the rate sheets; otherwise, use on-demand
 
 
 **User Interaction:**
-    - Use the `conversation_tool` to ask the user questions and collect necessary information.
-    - Use the 'conversation_tool' to respond to the users.
+    - Always use the `conversation_tool` to  interact with the user this includes asking questions and reponding to queries.
     - for user interaction always use the 'conversation_tool'
     - Use the 'display_table' tool to display tables to the user. 
 
