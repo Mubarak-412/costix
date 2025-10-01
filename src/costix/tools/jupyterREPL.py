@@ -221,7 +221,7 @@ def get_display_table_tool() -> BaseTool:
             'data':table_data}
 
 
-        tool_message=ToolMessage(content='table displayed successfully',tool_call_id=tool_call_id)
+        tool_message=ToolMessage(content='table successfully displayed to the user',tool_call_id=tool_call_id)
         updates={'messages':[tool_message],'thoughts':thought}
         return Command(update=updates)
 
