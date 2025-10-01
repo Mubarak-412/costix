@@ -16,9 +16,11 @@ from costix.agents import (
     get_estimate_agent
 )
 from costix.model import get_model,get_resoning_model
+from costix.summary.summaryNode import summary_condition
 from costix.tools import get_jupyter_repl_tool,get_display_table_tool
 from costix.agents.useCase import fetch_use_case_prompt
-    
+from costix.summary import SummaryNode
+
 def create_agent_node(agent:any):
     'creates a graph node from Agent, allows customizing the updates made by agent'
 
@@ -49,12 +51,26 @@ def create_agent_node(agent:any):
 
 
 
-ALL_AGENT_NODES=[
+ALL_NODES=[
     CostixNodes.INFO_AGENT,
     CostixNodes.SOLUTION_AGENT,
     CostixNodes.TECHNICAL_AGENT,
     CostixNodes.ESTIMATE_AGENT,
+    CostixNodes.SUMMARY_NODE
+
     ]
+
+
+def phase_router(state)->CostixNodes|list[CostixNodes]:
+    current_phase=state['current_phase']
+    routing_node=CostixPhaseToNodeMap[current_phase]
+    if summary_condition(state):
+        print('routing to ',[routing_node,CostixNodes.SUMMARY_NODE])
+        return [routing_node,CostixNodes.SUMMARY_NODE]
+    
+    print('routing to',routing_node)
+    return routing_node
+
 
 
 class CostixGraph:
@@ -62,8 +78,13 @@ class CostixGraph:
     Graph for the COSTIX estimation process.
     '''
 
+
+    MAX_MESSAGES_TO_PERSIST=20
+    SUMMARY_CHUNK_SIZE=5
+
     def __init__(self,checkpointer:any=None):
         model=get_model()
+        self.model=model
         graph=StateGraph(CostixState)
         
         self.python_tool=get_jupyter_repl_tool()
@@ -74,6 +95,7 @@ class CostixGraph:
         self.solution_agent=get_solution_agent(model,additional_tools=self.additional_tools)
         self.technical_agent=get_technical_agent(model,additional_tools=self.additional_tools)
         self.estimate_agent=get_estimate_agent(model,additional_tools=self.additional_tools)
+        self.summary_node=SummaryNode(model)
 
 
         self.info_agent_node=create_agent_node(self.info_agent)
@@ -85,10 +107,22 @@ class CostixGraph:
         graph.add_node(CostixNodes.SOLUTION_AGENT,self.solution_agent_node)
         graph.add_node(CostixNodes.TECHNICAL_AGENT,self.technical_agent_node)
         graph.add_node(CostixNodes.ESTIMATE_AGENT,self.estimate_agent_node)
+        graph.add_node(CostixNodes.SUMMARY_NODE,self.summary_node)
 
-        graph.add_conditional_edges(START, lambda state:state['current_phase'],CostixPhaseToNodeMap)
-        graph.add_edge(ALL_AGENT_NODES,END)
+        graph.add_conditional_edges(START,phase_router,ALL_NODES)
+        graph.add_edge(ALL_NODES,END)
         self.graph=graph.compile(checkpointer=checkpointer)
+
+
+
+   
+        
+
+        
+
+
+
+
 
     def get_graph(self,*args,**kwargs):
             return self.graph.get_graph(*args,**kwargs)
@@ -104,8 +138,9 @@ class CostixGraph:
             'use_case_prompt': use_case_prompt,
             'current_phase':CostixPhase.INFORMATION_GATHERING,
             'messages':[],
-            'thoughts':[],
+            'messages_summary':[],
             'messages_history':[],
+            'thoughts':[],
             'collected_data':[],
             'solution':[],
             'technical_requirements':[],

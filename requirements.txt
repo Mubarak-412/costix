@@ -1,6 +1,7 @@
 langchain-openai
 langchain
 langgraph
+langmem
 pydantic
 python-dotenv
 pyzmq

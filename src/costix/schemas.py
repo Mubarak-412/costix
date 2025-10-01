@@ -21,7 +21,6 @@ class CostixPhase(StrEnum):
     TECHNICAL='TECHNICAL'
     ESTIMATION='ESTIMATION'
 
-
 class CostixNodes(StrEnum):
     '''
     Enum representing the different node names in the COSTIX estimation process.
@@ -30,6 +29,11 @@ class CostixNodes(StrEnum):
     SOLUTION_AGENT='solution_agent'
     TECHNICAL_AGENT='technical_agent'
     ESTIMATE_AGENT='estimate_agent'
+    SUMMARY_NODE='summary_node'
+
+
+
+
 
 CostixPhaseToNodeMap={
     CostixPhase.INFORMATION_GATHERING:CostixNodes.INFO_AGENT,
@@ -68,6 +72,7 @@ class CostixState(TypedDict):
     user_input: str=''
     use_case_prompt: str=''                                       # >stores the use case prompt
     messages: Annotated[Sequence[BaseMessage], add_messages]    # >stores the message context
+    messages_summary:Annotated[Sequence[BaseMessage], add_messages]=[]  # > stores the summary of messages 
     messages_history: Annotated[Sequence[BaseMessage], add_messages]=[]                   # >stores the message history for the chat(ui)
     current_phase: CostixPhase=CostixPhase.INFORMATION_GATHERING
     thoughts:Annotated[list[dict],make_add_or_update_reducer(dict)]=[]
